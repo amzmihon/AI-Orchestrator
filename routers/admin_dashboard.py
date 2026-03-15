@@ -586,10 +586,26 @@ async def ai_generate_all_descriptions():
 
 @router.get("/rbac")
 async def get_rbac():
-    """Return the full role configuration."""
+    """Return the full role configuration with table/column metadata."""
     data = _read_json(_ROLE_CONFIG_PATH)
     schema = _read_json(_SCHEMA_MAP_PATH)
-    all_tables = sorted(schema.get("tables", {}).keys())
+    schema_tables = schema.get("tables", {})
+    all_tables = sorted(schema_tables.keys())
+
+    # Build table metadata with columns and categories (inferred from prefix)
+    table_meta = {}
+    for tname in all_tables:
+        tinfo = schema_tables.get(tname, {})
+        cols = list(tinfo.get("columns", {}).keys())
+        # Infer category from table prefix
+        parts = tname.split("_", 1)
+        category = parts[0] if len(parts) > 1 else "other"
+        table_meta[tname] = {
+            "columns": cols,
+            "description": tinfo.get("description", ""),
+            "category": category,
+        }
+
     roles = {}
     for role_name, role_info in data.get("roles", {}).items():
         allowed = role_info.get("allowed_tables", [])
@@ -600,7 +616,7 @@ async def get_rbac():
             "all_access": is_all,
             "denied_columns": role_info.get("denied_columns", {}),
         }
-    return {"all_tables": all_tables, "roles": roles}
+    return {"all_tables": all_tables, "table_meta": table_meta, "roles": roles}
 
 
 @router.put("/rbac/{role_name}")

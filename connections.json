@@ -11,7 +11,8 @@
       "context_window": 131072,
       "purpose": "General SQL + Summarisation",
       "api_key": "YOUR_GROQ_API_KEY_HERE",
-      "id": "llm-default"
+      "id": "llm-default",
+      "is_active": true
     }
   ],
   "databases": [
@@ -25,7 +26,8 @@
       "user": "ai_reader",
       "purpose": "Primary ERP staging data",
       "password": "YOUR_DB_PASSWORD_HERE",
-      "id": "db-default"
+      "id": "db-default",
+      "is_active": true
     }
   ],
   "applications": [

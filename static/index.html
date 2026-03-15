@@ -141,6 +141,33 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ═══ MODAL: Edit RBAC Role ═══ -->
+<div id="modalRbac" class="fixed inset-0 z-[300] bg-black/40 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-7 max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h3 id="rbacModalTitle" class="text-lg font-bold text-gray-900">Edit Role</h3>
+      <button onclick="closeModal('modalRbac')" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    </div>
+    <div id="rbacModalFields" class="space-y-5 mb-5"></div>
+    <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+      <button onclick="closeModal('modalRbac')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+      <button onclick="saveRbacRole()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Connection (Add / Edit) ═══ -->
+<div id="modalConnection" class="fixed inset-0 z-[300] bg-black/40 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-7 max-h-[90vh] overflow-y-auto">
+    <h3 id="connModalTitle" class="text-lg font-bold text-gray-900 mb-5">Add Connection</h3>
+    <div id="connModalFields" class="space-y-3 mb-5"></div>
+    <div class="flex justify-end gap-2">
+      <button onclick="closeModal('modalConnection')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+      <button id="connModalSaveBtn" onclick="saveConnection()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ LAYOUT ═══ -->
 <div class="flex h-full">
 
@@ -855,29 +882,44 @@ tailwind.config = {
     <div class="flex items-center justify-between mb-6">
       <div><h2 class="text-xl font-bold text-gray-900">Connections</h2><p class="text-sm text-gray-500">LLM, Database & Auth configuration</p></div>
     </div>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- LLM Connection -->
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span>LLM Provider</h3>
-        <div id="connLlm"><p class="text-sm text-gray-400">Loading…</p></div>
+        <div id="connLlmSummary"><p class="text-sm text-gray-400">Loading…</p></div>
       </div>
-      <!-- Database Connection -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Database</h3>
-        <div id="connDb"><p class="text-sm text-gray-400">Loading…</p></div>
+        <div id="connDbSummary"><p class="text-sm text-gray-400">Loading…</p></div>
       </div>
-      <!-- Auth Connection -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-500"></span>Authentication</h3>
-        <div id="connAuth"><p class="text-sm text-gray-400">Loading…</p></div>
+        <div id="connAuthSummary"><p class="text-sm text-gray-400">Loading…</p></div>
       </div>
     </div>
-    <!-- Connection List -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mt-6 overflow-hidden">
+    <!-- LLM Providers -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h3 class="text-sm font-bold text-gray-900">All Connections</h3>
+        <h3 class="text-sm font-bold text-gray-900">LLM Providers</h3>
+        <button onclick="openConnModal('llm_providers')" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">+ Add</button>
       </div>
-      <div id="connList" class="p-6"><p class="text-sm text-gray-400">Loading…</p></div>
+      <div id="connLlmList" class="divide-y divide-gray-50"><p class="text-sm text-gray-400 p-6">Loading…</p></div>
+    </div>
+    <!-- Databases -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-gray-900">Databases</h3>
+        <button onclick="openConnModal('databases')" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">+ Add</button>
+      </div>
+      <div id="connDbList" class="divide-y divide-gray-50"><p class="text-sm text-gray-400 p-6">Loading…</p></div>
+    </div>
+    <!-- Applications -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-gray-900">Applications</h3>
+        <button onclick="openConnModal('applications')" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">+ Add</button>
+      </div>
+      <div id="connAppList" class="divide-y divide-gray-50"><p class="text-sm text-gray-400 p-6">Loading…</p></div>
     </div>
   </div>
 </div>
@@ -938,10 +980,39 @@ tailwind.config = {
      ═══════════════════════════════════════════ -->
 <div id="page-permissions" class="page hidden flex-1 overflow-y-auto bg-gray-50">
   <div class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Header -->
     <div class="flex items-center justify-between mb-6">
-      <div><h2 class="text-xl font-bold text-gray-900">AI Permissions</h2><p class="text-sm text-gray-500">Role-based table access control matrix</p></div>
+      <div><h2 class="text-xl font-bold text-gray-900">AI Permissions</h2><p class="text-sm text-gray-500">Granular role-based access control — categories, tables &amp; columns</p></div>
     </div>
-    <div id="rbacContent" class="space-y-4"><p class="text-sm text-gray-400">Loading…</p></div>
+
+    <!-- Role selector -->
+    <div class="mb-4">
+      <label class="block text-xs font-semibold text-gray-500 mb-1.5">Select Role</label>
+      <div id="rbacRoleTabs" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Role info bar -->
+    <div id="rbacRoleInfo" class="hidden bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 id="rbacRoleName" class="text-sm font-bold text-gray-900 uppercase"></h3>
+          <p id="rbacRoleDesc" class="text-xs text-gray-400 mt-0.5"></p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="rbacRoleStats" class="text-xs text-gray-400"></span>
+          <button onclick="openRbacEdit(_rbacSelectedRole)" class="px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100">Edit Role Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category filter bar -->
+    <div id="rbacCategoryBar" class="hidden mb-4">
+      <label class="block text-xs font-semibold text-gray-500 mb-1.5">Filter by Category</label>
+      <div id="rbacCategoryTabs" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Tables grid -->
+    <div id="rbacContent" class="space-y-3"><p class="text-sm text-gray-400">Select a role above to manage permissions…</p></div>
   </div>
 </div>
 
@@ -1897,38 +1968,175 @@ function authGet() { return { headers: { 'Authorization': `Bearer ${token}` } };
 /* ══════════════════════════════════════════
    MODULE 1: CONNECTIONS
    ══════════════════════════════════════════ */
+let _connData = {};  // cached connection data
+let _connEditType = '';  // current modal type
+let _connEditId = null;  // null = add, string = edit
+
+const CONN_FIELDS = {
+  llm_providers: [
+    { key: 'label', label: 'Label', placeholder: 'e.g. Primary LLM' },
+    { key: 'provider', label: 'Provider', placeholder: 'e.g. groq, openai, ollama' },
+    { key: 'base_url', label: 'Base URL', placeholder: 'https://api.groq.com/openai' },
+    { key: 'model', label: 'Model', placeholder: 'e.g. meta-llama/llama-4-scout-17b-16e-instruct' },
+    { key: 'fast_model', label: 'Fast Model', placeholder: 'e.g. gpt-4o-mini' },
+    { key: 'api_key', label: 'API Key', placeholder: 'sk-...', secret: true },
+    { key: 'temperature', label: 'Temperature', placeholder: '0.1', type: 'number', step: '0.1' },
+    { key: 'max_tokens', label: 'Max Tokens', placeholder: '8192', type: 'number' },
+    { key: 'context_window', label: 'Context Window', placeholder: '131072', type: 'number' },
+    { key: 'purpose', label: 'Purpose', placeholder: 'General SQL + Summarisation' },
+  ],
+  databases: [
+    { key: 'label', label: 'Label', placeholder: 'e.g. Main ERP Database' },
+    { key: 'engine', label: 'Engine', placeholder: 'sqlite, postgresql, mysql' },
+    { key: 'url_override', label: 'URL Override', placeholder: 'sqlite+aiosqlite:///path/to/db (optional)' },
+    { key: 'host', label: 'Host', placeholder: 'localhost' },
+    { key: 'port', label: 'Port', placeholder: '5432', type: 'number' },
+    { key: 'name', label: 'Database Name', placeholder: 'staging' },
+    { key: 'user', label: 'Username', placeholder: 'ai_reader' },
+    { key: 'password', label: 'Password', placeholder: 'password', secret: true },
+    { key: 'purpose', label: 'Purpose', placeholder: 'Primary ERP staging data' },
+  ],
+  applications: [
+    { key: 'label', label: 'Label', placeholder: 'e.g. ERP-BGS Django App' },
+    { key: 'base_url', label: 'Base URL', placeholder: 'http://localhost:7000' },
+    { key: 'auth_mode', label: 'Auth Mode', placeholder: 'jwt, http, hybrid' },
+    { key: 'jwt_secret', label: 'JWT Secret', placeholder: 'shared-secret', secret: true },
+    { key: 'jwt_algorithm', label: 'JWT Algorithm', placeholder: 'HS256' },
+    { key: 'jwt_issuer', label: 'JWT Issuer', placeholder: 'erp-bgs' },
+    { key: 'jwt_audience', label: 'JWT Audience', placeholder: 'atl-ai' },
+    { key: 'token_cache_ttl', label: 'Token Cache TTL (s)', placeholder: '300', type: 'number' },
+  ],
+};
+
 async function loadConnections() {
   try {
     const r = await fetch(`${ORCH}/api/admin/dashboard/connections`, authGet());
     const d = await r.json();
-    // Render LLM card
-    const llm = d.llm || {};
-    document.getElementById('connLlm').innerHTML = Object.keys(llm).length
-      ? Object.entries(llm).map(([k,v]) => `<div class="flex justify-between py-1.5 text-sm"><span class="text-gray-500">${esc(k)}</span><span class="font-mono text-xs text-gray-700">${esc(String(v))}</span></div>`).join('')
-      : '<p class="text-sm text-gray-400">Not configured</p>';
-    // Render DB card
-    const db = d.database || {};
-    document.getElementById('connDb').innerHTML = Object.keys(db).length
-      ? Object.entries(db).map(([k,v]) => `<div class="flex justify-between py-1.5 text-sm"><span class="text-gray-500">${esc(k)}</span><span class="font-mono text-xs text-gray-700">${esc(String(v))}</span></div>`).join('')
-      : '<p class="text-sm text-gray-400">Not configured</p>';
-    // Render Auth card
-    const auth = d.auth || {};
-    document.getElementById('connAuth').innerHTML = Object.keys(auth).length
-      ? Object.entries(auth).map(([k,v]) => `<div class="flex justify-between py-1.5 text-sm"><span class="text-gray-500">${esc(k)}</span><span class="font-mono text-xs text-gray-700">${esc(String(v))}</span></div>`).join('')
-      : '<p class="text-sm text-gray-400">Not configured</p>';
-    // Connection list
-    const all = d.connections || d.all || [];
-    if (Array.isArray(all) && all.length) {
-      document.getElementById('connList').innerHTML = all.map(c => `<div class="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-        <div><div class="font-semibold text-sm text-gray-900">${esc(c.name || c.type || '—')}</div><div class="text-xs text-gray-400">${esc(c.type || '')} · ${esc(c.url || c.host || '')}</div></div>
-        <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${c.active ? 'bg-emerald-500' : 'bg-gray-300'}"></span><span class="text-xs text-gray-500">${c.active ? 'Active' : 'Inactive'}</span></div>
-      </div>`).join('');
-    } else {
-      document.getElementById('connList').innerHTML = '<p class="text-sm text-gray-400">No connections configured</p>';
-    }
+    _connData = d;
+
+    // Summary cards — show active connection info
+    const activeLlm = (d.llm_providers || []).find(c => c.is_active);
+    document.getElementById('connLlmSummary').innerHTML = activeLlm
+      ? `<div class="text-sm"><div class="font-medium text-gray-800">${esc(activeLlm.label || activeLlm.provider || '—')}</div><div class="text-xs text-gray-400 mt-1">${esc(activeLlm.model || '')} · ${esc(activeLlm.provider || '')}</div><div class="text-xs text-gray-400">Key: ${esc(activeLlm.api_key_preview || (activeLlm.api_key_set ? '••• set' : 'not set'))}</div></div>`
+      : '<p class="text-sm text-gray-400">No active LLM</p>';
+
+    const activeDb = (d.databases || []).find(c => c.is_active);
+    document.getElementById('connDbSummary').innerHTML = activeDb
+      ? `<div class="text-sm"><div class="font-medium text-gray-800">${esc(activeDb.label || activeDb.engine || '—')}</div><div class="text-xs text-gray-400 mt-1">${esc(activeDb.engine || '')} · ${esc(activeDb.host || '')}${activeDb.port ? ':' + activeDb.port : ''}</div><div class="text-xs text-gray-400">DB: ${esc(activeDb.name || activeDb.url_override || '—')}</div></div>`
+      : '<p class="text-sm text-gray-400">No active database</p>';
+
+    const activeApp = (d.applications || []).find(c => c.is_active);
+    document.getElementById('connAuthSummary').innerHTML = activeApp
+      ? `<div class="text-sm"><div class="font-medium text-gray-800">${esc(activeApp.label || '—')}</div><div class="text-xs text-gray-400 mt-1">${esc(activeApp.auth_mode || '')} · ${esc(activeApp.base_url || '')}</div><div class="text-xs text-gray-400">Secret: ${esc(activeApp.jwt_secret_preview || (activeApp.jwt_secret_set ? '••• set' : 'not set'))}</div></div>`
+      : '<p class="text-sm text-gray-400">No active application</p>';
+
+    // Connection lists
+    renderConnList('connLlmList', 'llm_providers', d.llm_providers || []);
+    renderConnList('connDbList', 'databases', d.databases || []);
+    renderConnList('connAppList', 'applications', d.applications || []);
   } catch (e) {
-    document.getElementById('connLlm').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`;
+    document.getElementById('connLlmSummary').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`;
   }
+}
+
+function renderConnList(elId, connType, items) {
+  const el = document.getElementById(elId);
+  if (!items.length) { el.innerHTML = '<p class="text-sm text-gray-400 p-6">No connections</p>'; return; }
+  el.innerHTML = items.map(c => {
+    const active = c.is_active;
+    const label = c.label || c.id || '—';
+    let detail = '';
+    if (connType === 'llm_providers') detail = `${c.provider || '—'} · ${c.model || '—'}`;
+    else if (connType === 'databases') detail = `${c.engine || '—'} · ${c.host || ''}${c.port ? ':' + c.port : ''} · ${c.name || c.url_override || ''}`;
+    else detail = `${c.auth_mode || '—'} · ${c.base_url || '—'}`;
+    return `<div class="flex items-center justify-between px-6 py-4">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full flex-shrink-0 ${active ? 'bg-emerald-500' : 'bg-gray-300'}"></span>
+          <span class="font-semibold text-sm text-gray-900">${esc(label)}</span>
+          ${active ? '<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">ACTIVE</span>' : ''}
+        </div>
+        <div class="text-xs text-gray-400 ml-4 mt-0.5 truncate">${esc(detail)}</div>
+      </div>
+      <div class="flex items-center gap-1.5 flex-shrink-0 ml-4">
+        ${!active ? `<button onclick="activateConn('${esc(connType)}','${esc(c.id)}')" class="px-2.5 py-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100" title="Set as active">Activate</button>` : ''}
+        <button onclick="openConnModal('${esc(connType)}','${esc(c.id)}')" class="px-2.5 py-1.5 text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100">Edit</button>
+        ${!active ? `<button onclick="deleteConn('${esc(connType)}','${esc(c.id)}')" class="px-2.5 py-1.5 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100">Delete</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openConnModal(connType, connId) {
+  _connEditType = connType;
+  _connEditId = connId || null;
+  const isEdit = !!connId;
+  const typeLabel = { llm_providers: 'LLM Provider', databases: 'Database', applications: 'Application' }[connType] || connType;
+  document.getElementById('connModalTitle').textContent = isEdit ? `Edit ${typeLabel}` : `Add ${typeLabel}`;
+
+  const fields = CONN_FIELDS[connType] || [];
+  const existing = isEdit ? (_connData[connType] || []).find(c => c.id === connId) || {} : {};
+
+  let html = '';
+  fields.forEach(f => {
+    let val = existing[f.key] || '';
+    // For secrets in edit mode, show placeholder
+    if (f.secret && isEdit) val = '';
+    const placeholder = f.secret && isEdit ? '(unchanged — leave blank to keep)' : (f.placeholder || '');
+    const inputType = f.type === 'number' ? 'number' : (f.secret ? 'password' : 'text');
+    html += `<div>
+      <label class="block text-xs font-semibold text-gray-500 mb-1">${esc(f.label)}</label>
+      <input id="conn_${f.key}" type="${inputType}" ${f.step ? `step="${f.step}"` : ''} value="${esc(String(val))}" placeholder="${esc(placeholder)}"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    </div>`;
+  });
+  document.getElementById('connModalFields').innerHTML = html;
+  openModal('modalConnection');
+}
+
+async function saveConnection() {
+  const fields = CONN_FIELDS[_connEditType] || [];
+  const body = {};
+  fields.forEach(f => {
+    const el = document.getElementById(`conn_${f.key}`);
+    if (!el) return;
+    let val = el.value.trim();
+    if (f.type === 'number' && val) val = Number(val);
+    if (f.secret && _connEditId && !val) return; // skip empty secret on edit (preserve)
+    if (val !== '' && val !== undefined) body[f.key] = val;
+  });
+
+  try {
+    let r;
+    if (_connEditId) {
+      r = await fetch(`${ORCH}/api/admin/dashboard/connections/${_connEditType}/${_connEditId}`, { method: 'PUT', headers: authHdr(), body: JSON.stringify(body) });
+    } else {
+      r = await fetch(`${ORCH}/api/admin/dashboard/connections/${_connEditType}`, { method: 'POST', headers: authHdr(), body: JSON.stringify(body) });
+    }
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Failed'); }
+    toast(_connEditId ? 'Connection updated' : 'Connection added', 'success');
+    closeModal('modalConnection');
+    loadConnections();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function activateConn(connType, connId) {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/connections/${connType}/${connId}/activate`, { method: 'POST', headers: authHdr() });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Failed'); }
+    toast('Connection activated', 'success');
+    loadConnections();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function deleteConn(connType, connId) {
+  if (!confirm('Delete this connection?')) return;
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/connections/${connType}/${connId}`, { method: 'DELETE', headers: authHdr() });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Failed'); }
+    toast('Connection deleted', 'success');
+    loadConnections();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 /* ══════════════════════════════════════════
@@ -2077,35 +2285,298 @@ async function removeSkill(name) {
 /* ══════════════════════════════════════════
    MODULE 4: AI PERMISSIONS (RBAC)
    ══════════════════════════════════════════ */
+let _rbacData = {};           // cached RBAC response
+let _rbacEditRole = '';       // role being edited in modal
+let _rbacSelectedRole = '';   // role shown on page
+let _rbacSelectedCat = 'all'; // selected category filter
+
 async function loadRbac() {
   try {
     const r = await fetch(`${ORCH}/api/admin/dashboard/rbac`, authGet());
     const d = await r.json();
-    const roles = d.roles || d || {};
-    const container = document.getElementById('rbacContent');
-    if (!Object.keys(roles).length) { container.innerHTML = '<p class="text-sm text-gray-400">No roles configured</p>'; return; }
-    container.innerHTML = Object.entries(roles).map(([role, info]) => {
-      const tables = info.allowed_tables || info.tables || [];
-      const allTables = info.all_tables || [];
-      return `<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-bold text-gray-900 uppercase">${esc(role)}</h3>
-          <span class="text-xs text-gray-400">${tables.length} tables allowed</span>
+    _rbacData = d;
+    const roles = d.roles || {};
+    const roleNames = Object.keys(roles);
+    // Render role tabs
+    const tabsEl = document.getElementById('rbacRoleTabs');
+    tabsEl.innerHTML = roleNames.map(rn =>
+      `<button onclick="selectRbacRole('${esc(rn)}')" class="rbac-role-tab px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${rn === _rbacSelectedRole ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}" data-role="${esc(rn)}">${esc(rn)}</button>`
+    ).join('');
+    // Auto-select first or current
+    if (_rbacSelectedRole && roles[_rbacSelectedRole]) {
+      renderRbacRole(_rbacSelectedRole);
+    } else if (roleNames.length) {
+      _rbacSelectedRole = roleNames[0];
+      renderRbacRole(_rbacSelectedRole);
+    }
+  } catch (e) {
+    document.getElementById('rbacContent').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`;
+  }
+}
+
+function selectRbacRole(role) {
+  _rbacSelectedRole = role;
+  _rbacSelectedCat = 'all';
+  // Update tab highlight
+  document.querySelectorAll('.rbac-role-tab').forEach(btn => {
+    const isActive = btn.dataset.role === role;
+    btn.className = `rbac-role-tab px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${isActive ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
+  });
+  renderRbacRole(role);
+}
+
+function renderRbacRole(role) {
+  const roles = _rbacData.roles || {};
+  const info = roles[role] || {};
+  const tableMeta = _rbacData.table_meta || {};
+  const allTables = Object.keys(tableMeta).length ? Object.keys(tableMeta) : (_rbacData.all_tables || []);
+  const allowed = info.allowed_tables || [];
+  const denied = info.denied_columns || {};
+
+  // Show role info bar
+  const infoBar = document.getElementById('rbacRoleInfo');
+  infoBar.classList.remove('hidden');
+  document.getElementById('rbacRoleName').textContent = role;
+  document.getElementById('rbacRoleDesc').textContent = info.description || 'No description';
+  const allowedCount = info.all_access ? allTables.length : allowed.length;
+  const deniedColCount = Object.values(denied).reduce((s, c) => s + c.length, 0);
+  document.getElementById('rbacRoleStats').innerHTML =
+    `${info.all_access ? '<span class="font-bold text-indigo-600">ALL ACCESS</span> · ' : ''}` +
+    `<span class="font-semibold text-emerald-600">${allowedCount}</span> tables allowed · ` +
+    `<span class="font-semibold text-amber-600">${deniedColCount}</span> columns denied`;
+
+  // Build categories
+  const categories = new Map();
+  allTables.forEach(t => {
+    const cat = (tableMeta[t] || {}).category || 'other';
+    if (!categories.has(cat)) categories.set(cat, []);
+    categories.get(cat).push(t);
+  });
+  const catNames = ['all', ...Array.from(categories.keys()).sort()];
+
+  // Render category tabs
+  const catBar = document.getElementById('rbacCategoryBar');
+  catBar.classList.remove('hidden');
+  const catTabsEl = document.getElementById('rbacCategoryTabs');
+  catTabsEl.innerHTML = catNames.map(cat => {
+    const count = cat === 'all' ? allTables.length : (categories.get(cat) || []).length;
+    const isActive = cat === _rbacSelectedCat;
+    return `<button onclick="filterRbacCategory('${esc(cat)}')" class="rbac-cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${isActive ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}" data-cat="${esc(cat)}">${esc(cat)} <span class="text-[10px] opacity-70">(${count})</span></button>`;
+  }).join('');
+
+  // Render tables
+  renderRbacTables(role, info, allTables, tableMeta, categories);
+}
+
+function filterRbacCategory(cat) {
+  _rbacSelectedCat = cat;
+  document.querySelectorAll('.rbac-cat-tab').forEach(btn => {
+    const isActive = btn.dataset.cat === cat;
+    btn.className = `rbac-cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${isActive ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`;
+  });
+  const info = (_rbacData.roles || {})[_rbacSelectedRole] || {};
+  const tableMeta = _rbacData.table_meta || {};
+  const allTables = Object.keys(tableMeta).length ? Object.keys(tableMeta) : (_rbacData.all_tables || []);
+  const categories = new Map();
+  allTables.forEach(t => {
+    const c = (tableMeta[t] || {}).category || 'other';
+    if (!categories.has(c)) categories.set(c, []);
+    categories.get(c).push(t);
+  });
+  renderRbacTables(_rbacSelectedRole, info, allTables, tableMeta, categories);
+}
+
+function renderRbacTables(role, info, allTables, tableMeta, categories) {
+  const allowed = info.allowed_tables || [];
+  const isWildcard = info.all_access;
+  const denied = info.denied_columns || {};
+  const container = document.getElementById('rbacContent');
+
+  // Filter tables by category
+  let tables = _rbacSelectedCat === 'all' ? allTables : (categories.get(_rbacSelectedCat) || []);
+  tables = tables.slice().sort();
+
+  if (!tables.length) {
+    container.innerHTML = '<p class="text-sm text-gray-400">No tables in this category.</p>';
+    return;
+  }
+
+  // Group by category for "all" view
+  const grouped = new Map();
+  tables.forEach(t => {
+    const cat = (tableMeta[t] || {}).category || 'other';
+    if (!grouped.has(cat)) grouped.set(cat, []);
+    grouped.get(cat).push(t);
+  });
+
+  let html = '';
+  for (const [cat, catTables] of Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+    const catAllowed = catTables.filter(t => isWildcard || allowed.includes(t));
+    html += `<div class="mb-5">
+      <div class="flex items-center gap-3 mb-2">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-500">${esc(cat)}</h4>
+        <span class="text-[10px] text-gray-400">${catAllowed.length}/${catTables.length} allowed</span>
+        <button onclick="toggleRbacCategory('${esc(role)}','${esc(cat)}',true)" class="text-[10px] text-emerald-600 hover:underline font-medium">Allow All</button>
+        <button onclick="toggleRbacCategory('${esc(role)}','${esc(cat)}',false)" class="text-[10px] text-red-500 hover:underline font-medium">Deny All</button>
+      </div>
+      <div class="space-y-2">`;
+
+    catTables.sort().forEach(t => {
+      const tMeta = tableMeta[t] || {};
+      const cols = tMeta.columns || [];
+      const desc = tMeta.description || '';
+      const tAllowed = isWildcard || allowed.includes(t);
+      const tDenied = denied[t] || [];
+      const colCount = cols.length;
+      const deniedCount = tDenied.length;
+      const accessibleCols = colCount - deniedCount;
+
+      html += `<div class="bg-white rounded-xl border ${tAllowed ? 'border-emerald-100' : 'border-gray-100'} shadow-sm">
+        <div class="flex items-center justify-between px-4 py-3 cursor-pointer" onclick="toggleRbacTableExpand('${esc(role)}','${esc(t)}')">
+          <div class="flex items-center gap-3">
+            <button onclick="event.stopPropagation(); toggleRbacTable('${esc(role)}','${esc(t)}')"
+              class="w-8 h-5 rounded-full relative transition-colors ${tAllowed ? 'bg-emerald-500' : 'bg-gray-300'}">
+              <span class="absolute top-0.5 ${tAllowed ? 'right-0.5' : 'left-0.5'} w-4 h-4 bg-white rounded-full shadow transition-all"></span>
+            </button>
+            <div>
+              <span class="text-sm font-semibold text-gray-800">${esc(t)}</span>
+              ${desc ? `<span class="text-[10px] text-gray-400 ml-2">${esc(desc)}</span>` : ''}
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            ${deniedCount ? `<span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">${deniedCount} denied</span>` : ''}
+            <span class="text-[10px] text-gray-400">${colCount} cols</span>
+            <svg class="w-4 h-4 text-gray-400 rbac-expand-icon transition-transform" data-table="${esc(t)}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
         </div>
-        <div class="flex flex-wrap gap-2">
-          ${(allTables.length ? allTables : tables).map(t => {
-            const allowed = tables.includes(t);
-            return `<button onclick="toggleRbacTable('${esc(role)}','${esc(t)}')" class="px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${allowed ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100'}">${esc(t)}</button>`;
-          }).join('')}
+        <div id="rbacCols_${esc(t)}" class="hidden border-t border-gray-50 px-4 py-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10px] font-semibold text-gray-500 uppercase">Column Access (${accessibleCols}/${colCount} visible)</span>
+            <div class="flex gap-2">
+              <button onclick="setAllRbacCols('${esc(role)}','${esc(t)}',true)" class="text-[10px] text-emerald-600 hover:underline font-medium">Allow All Cols</button>
+              <button onclick="setAllRbacCols('${esc(role)}','${esc(t)}',false)" class="text-[10px] text-red-500 hover:underline font-medium">Deny All Cols</button>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            ${cols.map(col => {
+              const isDenied = tDenied.includes(col);
+              return `<button onclick="toggleRbacCol('${esc(role)}','${esc(t)}','${esc(col)}')"
+                class="px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${isDenied ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100 line-through' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}">${esc(col)}</button>`;
+            }).join('')}
+          </div>
         </div>
       </div>`;
-    }).join('');
-  } catch (e) { document.getElementById('rbacContent').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`; }
+    });
+
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
 }
+
+function toggleRbacTableExpand(role, table) {
+  const el = document.getElementById(`rbacCols_${table}`);
+  const icon = document.querySelector(`.rbac-expand-icon[data-table="${table}"]`);
+  if (el) {
+    el.classList.toggle('hidden');
+    if (icon) icon.style.transform = el.classList.contains('hidden') ? '' : 'rotate(180deg)';
+  }
+}
+
 async function toggleRbacTable(role, table) {
   try {
     await fetch(`${ORCH}/api/admin/dashboard/rbac/${encodeURIComponent(role)}/toggle-table`, { method: 'POST', headers: authHdr(), body: JSON.stringify({ table }) });
-    toast(`Toggled ${table} for ${role}`, 'success'); loadRbac();
+    toast(`Toggled ${table} for ${role}`, 'success');
+    loadRbac();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function toggleRbacCategory(role, category, allow) {
+  const tableMeta = _rbacData.table_meta || {};
+  const tables = Object.keys(tableMeta).filter(t => (tableMeta[t].category || 'other') === category);
+  const info = (_rbacData.roles || {})[role] || {};
+  const current = info.allowed_tables || [];
+  let updated;
+  if (allow) {
+    updated = [...new Set([...current, ...tables])];
+  } else {
+    const removeSet = new Set(tables);
+    updated = current.filter(t => !removeSet.has(t));
+  }
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/rbac/${encodeURIComponent(role)}`, {
+      method: 'PUT', headers: authHdr(),
+      body: JSON.stringify({ allowed_tables: updated })
+    });
+    toast(`${allow ? 'Allowed' : 'Denied'} all ${category} tables for ${role}`, 'success');
+    loadRbac();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function toggleRbacCol(role, table, col) {
+  const info = (_rbacData.roles || {})[role] || {};
+  const denied = JSON.parse(JSON.stringify(info.denied_columns || {}));
+  const cols = denied[table] || [];
+  const idx = cols.indexOf(col);
+  if (idx >= 0) cols.splice(idx, 1); else cols.push(col);
+  if (cols.length) denied[table] = cols; else delete denied[table];
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/rbac/${encodeURIComponent(role)}`, {
+      method: 'PUT', headers: authHdr(),
+      body: JSON.stringify({ denied_columns: denied })
+    });
+    toast(`Toggled column ${col} on ${table}`, 'success');
+    loadRbac();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function setAllRbacCols(role, table, allow) {
+  const info = (_rbacData.roles || {})[role] || {};
+  const denied = JSON.parse(JSON.stringify(info.denied_columns || {}));
+  const tMeta = (_rbacData.table_meta || {})[table] || {};
+  if (allow) {
+    delete denied[table];
+  } else {
+    denied[table] = (tMeta.columns || []).slice();
+  }
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/rbac/${encodeURIComponent(role)}`, {
+      method: 'PUT', headers: authHdr(),
+      body: JSON.stringify({ denied_columns: denied })
+    });
+    toast(`${allow ? 'Allowed' : 'Denied'} all columns on ${table}`, 'success');
+    loadRbac();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function openRbacEdit(role) {
+  _rbacEditRole = role;
+  const info = (_rbacData.roles || {})[role] || {};
+  document.getElementById('rbacModalTitle').textContent = `Edit Role: ${role}`;
+  let html = '';
+  // Description
+  html += `<div><label class="block text-xs font-semibold text-gray-500 mb-1">Description</label>
+    <input id="rbacDesc" type="text" value="${esc(info.description || '')}" placeholder="Role description…"
+      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>`;
+  // All Access toggle
+  html += `<div class="flex items-center gap-3">
+    <label class="text-xs font-semibold text-gray-500">All Access (wildcard)</label>
+    <button id="rbacAllAccess" onclick="this.dataset.val = this.dataset.val === 'true' ? 'false' : 'true'; this.textContent = this.dataset.val === 'true' ? 'ON' : 'OFF'; this.className = this.dataset.val === 'true' ? 'px-3 py-1 text-xs font-bold rounded-lg bg-emerald-100 text-emerald-700 border border-emerald-300' : 'px-3 py-1 text-xs font-bold rounded-lg bg-gray-100 text-gray-500 border border-gray-300'"
+      data-val="${info.all_access ? 'true' : 'false'}" class="px-3 py-1 text-xs font-bold rounded-lg ${info.all_access ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 'bg-gray-100 text-gray-500 border border-gray-300'}">${info.all_access ? 'ON' : 'OFF'}</button>
+  </div>`;
+  document.getElementById('rbacModalFields').innerHTML = html;
+  openModal('modalRbac');
+}
+
+async function saveRbacRole() {
+  const body = {};
+  body.description = document.getElementById('rbacDesc').value.trim();
+  body.all_access = document.getElementById('rbacAllAccess').dataset.val === 'true';
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/rbac/${encodeURIComponent(_rbacEditRole)}`, { method: 'PUT', headers: authHdr(), body: JSON.stringify(body) });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Failed'); }
+    toast(`Role '${_rbacEditRole}' updated`, 'success');
+    closeModal('modalRbac');
+    loadRbac();
   } catch (e) { toast(e.message, 'error'); }
 }
 

@@ -71,7 +71,9 @@ app.include_router(
 # ── Static UI (AFTER routers so /api/* is matched first) ─
 @app.get("/", include_in_schema=False)
 async def root_ui():
-    return FileResponse(STATIC_DIR / "index.html")
+    resp = FileResponse(STATIC_DIR / "index.html")
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return resp
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 

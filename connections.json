@@ -18,7 +18,7 @@
     {
       "label": "Main ERP Database",
       "engine": "sqlite",
-      "url_override": "sqlite+aiosqlite:///C:/AI/ERP-BGS/db.sqlite3",
+      "url_override": "",
       "host": "localhost",
       "port": 5433,
       "name": "staging",

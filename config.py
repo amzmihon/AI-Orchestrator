@@ -186,7 +186,7 @@ class Settings(BaseSettings):
     role_config_path: str = "rbac/role_config.json"
 
     model_config = {
-        "env_file": ["../.env", ".env"],
+        "env_file": ".env",
         "env_prefix": "ATL_",
         "extra": "ignore",
     }

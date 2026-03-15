@@ -1,0 +1,199 @@
+{
+  "database": "staging",
+  "dialect": "postgresql",
+  "tables": {
+    "employees": {
+      "description": "Company employees — personal info, department, role, hire date",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Employee ID"},
+        "first_name": {"type": "varchar(100)", "description": "First name"},
+        "last_name": {"type": "varchar(100)", "description": "Last name"},
+        "email": {"type": "varchar(255)", "description": "Work email"},
+        "department": {"type": "varchar(100)", "description": "Department name (e.g. Sales, HR, Engineering)"},
+        "role": {"type": "varchar(100)", "description": "Job title / role"},
+        "hire_date": {"type": "date", "description": "Date the employee was hired"},
+        "salary": {"type": "numeric(12,2)", "description": "Annual salary"},
+        "status": {"type": "varchar(20)", "description": "active, on_leave, or terminated"},
+        "manager_id": {"type": "integer", "description": "FK → employees.id (direct manager)"},
+        "phone": {"type": "varchar(20)", "description": "Contact phone number"},
+        "date_of_birth": {"type": "date", "description": "Employee date of birth"},
+        "national_id": {"type": "varchar(30)", "description": "National ID number (sensitive)"},
+        "ssn": {"type": "varchar(20)", "description": "Social Security Number (sensitive)"},
+        "bank_account": {"type": "varchar(40)", "description": "Bank account number (sensitive)"},
+        "emergency_contact": {"type": "varchar(200)", "description": "Emergency contact name and phone"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"},
+        "updated_at": {"type": "timestamp", "description": "Last update time"}
+      }
+    },
+    "sales": {
+      "description": "Individual sales transactions",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Sale ID"},
+        "date": {"type": "date", "description": "Sale date"},
+        "amount": {"type": "numeric(12,2)", "description": "Sale amount in base currency"},
+        "product_id": {"type": "integer", "description": "FK → products.id"},
+        "product_name": {"type": "varchar(200)", "description": "Name of the product sold"},
+        "rep_id": {"type": "integer", "description": "FK → employees.id (sales representative)"},
+        "customer_id": {"type": "integer", "description": "FK → customers.id"},
+        "region": {"type": "varchar(100)", "description": "Sales region"},
+        "status": {"type": "varchar(20)", "description": "completed, pending, refunded"},
+        "discount_pct": {"type": "numeric(5,2)", "description": "Discount percentage applied (0 if none)"},
+        "notes": {"type": "text", "description": "Optional notes on the sale"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"}
+      }
+    },
+    "attendance": {
+      "description": "Daily attendance records for employees",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Record ID"},
+        "employee_id": {"type": "integer", "description": "FK → employees.id"},
+        "date": {"type": "date", "description": "Attendance date"},
+        "check_in": {"type": "time", "description": "Clock-in time"},
+        "check_out": {"type": "time", "description": "Clock-out time"},
+        "status": {"type": "varchar(20)", "description": "present, absent, late, half_day"},
+        "notes": {"type": "text", "description": "Optional notes"}
+      }
+    },
+    "projects": {
+      "description": "Company projects with status and deadlines",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Project ID"},
+        "name": {"type": "varchar(200)", "description": "Project name"},
+        "description": {"type": "text", "description": "Project description"},
+        "status": {"type": "varchar(20)", "description": "active, completed, on_hold, cancelled"},
+        "start_date": {"type": "date", "description": "Project start date"},
+        "deadline": {"type": "date", "description": "Target completion date"},
+        "team_lead_id": {"type": "integer", "description": "FK → employees.id (team lead)"},
+        "budget": {"type": "numeric(14,2)", "description": "Allocated budget"},
+        "department": {"type": "varchar(100)", "description": "Owning department"},
+        "priority": {"type": "varchar(20)", "description": "critical, high, medium, low"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"}
+      }
+    },
+    "leave_requests": {
+      "description": "Employee leave / time-off requests",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Request ID"},
+        "employee_id": {"type": "integer", "description": "FK → employees.id"},
+        "leave_type": {"type": "varchar(50)", "description": "annual, sick, personal, maternity, etc."},
+        "start_date": {"type": "date", "description": "Leave start date"},
+        "end_date": {"type": "date", "description": "Leave end date"},
+        "status": {"type": "varchar(20)", "description": "pending, approved, rejected"},
+        "reason": {"type": "text", "description": "Reason for leave"},
+        "approved_by": {"type": "integer", "description": "FK → employees.id (approver)"},
+        "created_at": {"type": "timestamp", "description": "Request submission time"}
+      }
+    },
+    "monthly_revenue": {
+      "description": "Aggregated monthly financial data",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Record ID"},
+        "month": {"type": "date", "description": "First day of the month (e.g. 2025-09-01)"},
+        "revenue": {"type": "numeric(14,2)", "description": "Total revenue for the month"},
+        "expenses": {"type": "numeric(14,2)", "description": "Total expenses for the month"},
+        "profit": {"type": "numeric(14,2)", "description": "revenue - expenses"},
+        "department": {"type": "varchar(100)", "description": "Department (or 'company' for totals)"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"}
+      }
+    },
+    "departments": {
+      "description": "Company departments",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Department ID"},
+        "name": {"type": "varchar(100)", "description": "Department name"},
+        "head_id": {"type": "integer", "description": "FK → employees.id (department head)"},
+        "budget": {"type": "numeric(14,2)", "description": "Annual department budget"},
+        "location": {"type": "varchar(200)", "description": "Physical location of the department"},
+        "cost_center": {"type": "varchar(20)", "description": "Cost center code"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"}
+      }
+    },
+    "customers": {
+      "description": "Customer / client records",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Customer ID"},
+        "name": {"type": "varchar(200)", "description": "Customer / company name"},
+        "email": {"type": "varchar(255)", "description": "Contact email"},
+        "industry": {"type": "varchar(100)", "description": "Industry sector"},
+        "region": {"type": "varchar(100)", "description": "Geographic region"},
+        "tier": {"type": "varchar(20)", "description": "Customer tier: standard, premium, enterprise"},
+        "credit_limit": {"type": "numeric(12,2)", "description": "Customer credit limit"},
+        "payment_terms": {"type": "integer", "description": "Payment terms in days (e.g. 30, 45, 60)"},
+        "is_active": {"type": "boolean", "description": "Whether the customer is currently active"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"}
+      }
+    },
+    "employee_skills": {
+      "description": "Employee skills, certifications, and proficiency levels. Use for skill matching and coverage analysis.",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Record ID"},
+        "employee_id": {"type": "integer", "description": "FK → employees.id"},
+        "skill_name": {"type": "varchar(150)", "description": "Name of skill (e.g. System Administration, Python, B2B Sales)"},
+        "proficiency": {"type": "varchar(30)", "description": "beginner, intermediate, advanced, expert"},
+        "certified": {"type": "boolean", "description": "Whether the employee holds a formal certification"},
+        "certification_name": {"type": "varchar(200)", "description": "Name of certification (NULL if not certified)"},
+        "certified_date": {"type": "date", "description": "Date certification was obtained"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"}
+      }
+    },
+    "project_assignments": {
+      "description": "Maps employees to projects with their role and criticality. Use to find who is assigned to which project.",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Record ID"},
+        "project_id": {"type": "integer", "description": "FK → projects.id"},
+        "employee_id": {"type": "integer", "description": "FK → employees.id"},
+        "role_in_project": {"type": "varchar(100)", "description": "Role within the project (Lead, Developer, etc.)"},
+        "assigned_date": {"type": "date", "description": "Date assigned"},
+        "is_critical": {"type": "boolean", "description": "Whether this person is critical to the project"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"}
+      }
+    },
+    "expenses": {
+      "description": "Itemized company expenses — salaries, rent, utilities, marketing spend, equipment, travel, etc. Use for financial analysis and forecasting.",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Record ID"},
+        "date": {"type": "date", "description": "Expense date or period start"},
+        "category": {"type": "varchar(100)", "description": "Category: Salaries, Office Rent, Utilities, Insurance, Marketing, Travel, Equipment, Training, etc."},
+        "description": {"type": "varchar(300)", "description": "Expense description"},
+        "amount": {"type": "numeric(12,2)", "description": "Expense amount"},
+        "department": {"type": "varchar(100)", "description": "Department or 'company' for company-wide costs"},
+        "recurring": {"type": "boolean", "description": "Whether this is a fixed recurring expense"},
+        "approved_by": {"type": "integer", "description": "FK → employees.id (approver)"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"}
+      }
+    },
+    "payroll": {
+      "description": "Monthly payroll records — gross pay, deductions, and net pay for each employee",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Record ID"},
+        "employee_id": {"type": "integer", "description": "FK → employees.id"},
+        "pay_period": {"type": "date", "description": "First day of the pay month"},
+        "gross_pay": {"type": "numeric(12,2)", "description": "Monthly gross pay"},
+        "tax_deduction": {"type": "numeric(12,2)", "description": "Tax deduction amount"},
+        "insurance_deduction": {"type": "numeric(12,2)", "description": "Insurance deduction"},
+        "pension_deduction": {"type": "numeric(12,2)", "description": "Pension contribution"},
+        "other_deductions": {"type": "numeric(12,2)", "description": "Other deductions"},
+        "net_pay": {"type": "numeric(12,2)", "description": "Net pay after all deductions"},
+        "payment_method": {"type": "varchar(50)", "description": "bank_transfer, cheque, cash"},
+        "bank_reference": {"type": "varchar(100)", "description": "Bank transaction reference"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"}
+      }
+    },
+    "performance_reviews": {
+      "description": "Annual performance reviews — ratings, feedback, salary and promotion recommendations",
+      "columns": {
+        "id": {"type": "integer", "primary_key": true, "description": "Review ID"},
+        "employee_id": {"type": "integer", "description": "FK → employees.id"},
+        "reviewer_id": {"type": "integer", "description": "FK → employees.id (reviewer)"},
+        "review_period": {"type": "varchar(20)", "description": "Review period (e.g. 2025)"},
+        "rating": {"type": "numeric(3,1)", "description": "Rating from 1.0 to 5.0"},
+        "strengths": {"type": "text", "description": "Key strengths identified"},
+        "areas_for_improvement": {"type": "text", "description": "Areas for improvement"},
+        "comments": {"type": "text", "description": "General comments"},
+        "salary_recommendation": {"type": "varchar(50)", "description": "Recommended salary adjustment"},
+        "promotion_recommended": {"type": "boolean", "description": "Whether promotion was recommended"},
+        "created_at": {"type": "timestamp", "description": "Record creation time"}
+      }
+    }
+  }
+}

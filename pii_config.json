@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "types": {
+    "EMAIL": true,
+    "PHONE": true,
+    "SSN": true,
+    "CREDIT_CARD": true,
+    "IP_ADDRESS": true,
+    "DATE_OF_BIRTH": true,
+    "NATIONAL_ID": true
+  },
+  "action": "redact",
+  "custom_blocked_topics": []
+}

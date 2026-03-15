@@ -1,0 +1,397 @@
+{
+  "roles": {
+    "admin": {
+      "description": "Full access to all tables â€” CEO, MD, CTO, system admin",
+      "allowed_tables": [
+        "*"
+      ],
+      "denied_columns": {}
+    },
+    "manager": {
+      "description": "Factory / General Manager â€” full access to all modules and tables",
+      "allowed_tables": [
+        "*"
+      ],
+      "denied_columns": {}
+    },
+    "merchandiser": {
+      "description": "Merchandising team â€” full orders/buyers/styles access, read-only production/inventory/finance/logistics",
+      "allowed_tables": [
+        "orders_order",
+        "orders_buyer",
+        "orders_style",
+        "orders_bomitem",
+        "orders_costingsheet",
+        "orders_timeaction",
+        "orders_lead",
+        "orders_campaign",
+        "orders_sample",
+        "inventory_inventory",
+        "inventory_stocktransaction",
+        "inventory_supplier",
+        "production_production",
+        "production_inspection",
+        "production_productiontarget",
+        "production_cuttingplan",
+        "finance_invoice",
+        "finance_letterofcredit",
+        "logistics_shipment",
+        "logistics_shipmentbatch",
+        "logistics_freightcost"
+      ],
+      "denied_columns": {
+        "finance_invoice": [
+          "paid_amount"
+        ],
+        "hr_employee": [
+          "basic_salary",
+          "emergency_contact"
+        ]
+      }
+    },
+    "production": {
+      "description": "Production manager â€” orders read-only, production read/write, inventory read-only",
+      "allowed_tables": [
+        "orders_order",
+        "orders_buyer",
+        "orders_style",
+        "orders_bomitem",
+        "orders_timeaction",
+        "production_production",
+        "production_inspection",
+        "production_complianceaudit",
+        "production_machine",
+        "production_maintenancelog",
+        "production_productiontarget",
+        "production_cuttingplan",
+        "inventory_inventory",
+        "inventory_stocktransaction",
+        "hr_worker",
+        "hr_attendance"
+      ],
+      "denied_columns": {
+        "hr_worker": [
+          "daily_rate"
+        ],
+        "orders_order": [
+          "unit_price",
+          "total_value"
+        ]
+      }
+    },
+    "warehouse": {
+      "description": "Warehouse / store manager â€” full inventory access, logistics read/write, production read-only",
+      "allowed_tables": [
+        "inventory_inventory",
+        "inventory_stocktransaction",
+        "inventory_supplier",
+        "inventory_purchaseorder",
+        "inventory_grn",
+        "inventory_warehouse",
+        "inventory_stocktransfer",
+        "orders_order",
+        "orders_bomitem",
+        "production_production",
+        "production_cuttingplan",
+        "logistics_shipment",
+        "logistics_shipmentbatch"
+      ],
+      "denied_columns": {
+        "orders_order": [
+          "unit_price",
+          "total_value"
+        ]
+      }
+    },
+    "quality": {
+      "description": "Quality control â€” inspections, compliance, production data, styles for spec reference",
+      "allowed_tables": [
+        "orders_order",
+        "orders_style",
+        "orders_bomitem",
+        "production_production",
+        "production_inspection",
+        "production_complianceaudit",
+        "production_machine",
+        "production_productiontarget",
+        "inventory_inventory",
+        "hr_worker",
+        "hr_attendance"
+      ],
+      "denied_columns": {
+        "orders_order": [
+          "unit_price",
+          "total_value"
+        ],
+        "hr_worker": [
+          "daily_rate"
+        ]
+      }
+    },
+    "cutting": {
+      "description": "Cutting section â€” cutting plans, production, orders, styles, inventory for fabric availability",
+      "allowed_tables": [
+        "orders_order",
+        "orders_style",
+        "orders_bomitem",
+        "production_production",
+        "production_cuttingplan",
+        "production_productiontarget",
+        "inventory_inventory",
+        "inventory_stocktransaction"
+      ],
+      "denied_columns": {
+        "orders_order": [
+          "unit_price",
+          "total_value"
+        ]
+      }
+    },
+    "sewing": {
+      "description": "Sewing section â€” production tracking, targets, styles for measurement specs",
+      "allowed_tables": [
+        "orders_order",
+        "orders_style",
+        "production_production",
+        "production_inspection",
+        "production_productiontarget",
+        "production_machine",
+        "inventory_inventory"
+      ],
+      "denied_columns": {
+        "orders_order": [
+          "unit_price",
+          "total_value"
+        ]
+      }
+    },
+    "finishing": {
+      "description": "Finishing section â€” production, inspections, packing and shipments",
+      "allowed_tables": [
+        "orders_order",
+        "orders_style",
+        "production_production",
+        "production_inspection",
+        "production_productiontarget",
+        "inventory_inventory",
+        "logistics_shipment"
+      ],
+      "denied_columns": {
+        "orders_order": [
+          "unit_price",
+          "total_value"
+        ]
+      }
+    },
+    "maintenance": {
+      "description": "Maintenance team â€” machines, maintenance logs, inventory for spare parts",
+      "allowed_tables": [
+        "production_machine",
+        "production_maintenancelog",
+        "production_production",
+        "inventory_inventory"
+      ],
+      "denied_columns": {}
+    },
+    "hr": {
+      "description": "HR department â€” full employee, attendance, payroll, leave access",
+      "allowed_tables": [
+        "hr_employee",
+        "hr_worker",
+        "hr_attendance",
+        "hr_leaverequest",
+        "hr_payroll",
+        "hr_salaryslip",
+        "accounts_user"
+      ],
+      "denied_columns": {
+        "accounts_user": [
+          "password"
+        ]
+      }
+    },
+    "finance": {
+      "description": "Finance / accounts department â€” invoices, payments, GL, bank, budgets, LCs, payroll costs",
+      "allowed_tables": [
+        "finance_invoice",
+        "finance_payment",
+        "finance_account",
+        "finance_journalentry",
+        "finance_journalline",
+        "finance_bankaccount",
+        "finance_banktransaction",
+        "finance_budget",
+        "finance_letterofcredit",
+        "orders_order",
+        "orders_buyer",
+        "orders_costingsheet",
+        "inventory_purchaseorder",
+        "inventory_supplier",
+        "production_production",
+        "hr_payroll",
+        "hr_salaryslip",
+        "logistics_shipment",
+        "logistics_freightcost"
+      ],
+      "denied_columns": {
+        "finance_bankaccount": [
+          "account_number"
+        ]
+      }
+    },
+    "logistics": {
+      "description": "Logistics / shipping team â€” shipments, freight, customs, inventory and orders for reference",
+      "allowed_tables": [
+        "logistics_shipment",
+        "logistics_freightcost",
+        "logistics_shipmentbatch",
+        "orders_order",
+        "orders_buyer",
+        "inventory_inventory",
+        "inventory_stocktransfer",
+        "inventory_warehouse",
+        "production_production"
+      ],
+      "denied_columns": {
+        "orders_order": [
+          "unit_price"
+        ]
+      }
+    },
+    "design": {
+      "description": "Design / technical team â€” styles, BOM, samples, production for tech-pack follow-up",
+      "allowed_tables": [
+        "orders_style",
+        "orders_bomitem",
+        "orders_sample",
+        "orders_order",
+        "inventory_inventory",
+        "production_production",
+        "production_inspection"
+      ],
+      "denied_columns": {
+        "orders_order": [
+          "unit_price",
+          "total_value"
+        ]
+      }
+    },
+    "compliance": {
+      "description": "Compliance officer â€” audits, inspections, workers, attendance, across modules for audit readiness",
+      "allowed_tables": [
+        "production_complianceaudit",
+        "production_inspection",
+        "production_production",
+        "production_machine",
+        "production_maintenancelog",
+        "orders_order",
+        "orders_buyer",
+        "orders_style",
+        "hr_employee",
+        "hr_worker",
+        "hr_attendance",
+        "hr_leaverequest",
+        "inventory_inventory",
+        "finance_invoice",
+        "finance_payment",
+        "logistics_shipment"
+      ],
+      "denied_columns": {
+        "hr_employee": [
+          "basic_salary"
+        ],
+        "hr_worker": [
+          "daily_rate"
+        ],
+        "finance_invoice": [
+          "paid_amount"
+        ]
+      }
+    },
+    "receptionist": {
+      "description": "Front desk / reception â€” minimal access, primarily reception module",
+      "allowed_tables": [],
+      "denied_columns": {}
+    },
+    "viewer": {
+      "description": "Read-only viewer â€” can query all tables but no sensitive financial or personal data",
+      "allowed_tables": [
+        "*"
+      ],
+      "denied_columns": {
+        "hr_employee": [
+          "basic_salary",
+          "date_of_birth",
+          "emergency_contact"
+        ],
+        "hr_worker": [
+          "daily_rate"
+        ],
+        "hr_salaryslip": [
+          "basic_salary",
+          "gross_salary",
+          "net_salary",
+          "deductions",
+          "overtime_amount"
+        ],
+        "finance_bankaccount": [
+          "account_number",
+          "current_balance",
+          "opening_balance"
+        ],
+        "finance_banktransaction": [
+          "amount",
+          "running_balance"
+        ],
+        "orders_costingsheet": [
+          "cm_cost",
+          "profit_margin_pct"
+        ]
+      }
+    }
+  },
+  "all_tables": [
+    "orders_buyer",
+    "orders_style",
+    "orders_order",
+    "orders_bomitem",
+    "orders_costingsheet",
+    "orders_timeaction",
+    "orders_lead",
+    "orders_campaign",
+    "orders_sample",
+    "production_production",
+    "production_inspection",
+    "production_complianceaudit",
+    "production_machine",
+    "production_maintenancelog",
+    "production_productiontarget",
+    "production_cuttingplan",
+    "finance_invoice",
+    "finance_payment",
+    "finance_account",
+    "finance_journalentry",
+    "finance_journalline",
+    "finance_bankaccount",
+    "finance_banktransaction",
+    "finance_budget",
+    "finance_letterofcredit",
+    "inventory_inventory",
+    "inventory_stocktransaction",
+    "inventory_supplier",
+    "inventory_purchaseorder",
+    "inventory_grn",
+    "inventory_warehouse",
+    "inventory_stocktransfer",
+    "hr_employee",
+    "hr_worker",
+    "hr_attendance",
+    "hr_leaverequest",
+    "hr_payroll",
+    "hr_salaryslip",
+    "logistics_shipment",
+    "logistics_freightcost",
+    "logistics_shipmentbatch",
+    "accounts_user"
+  ]
+}

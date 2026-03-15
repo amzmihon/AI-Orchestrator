@@ -1,0 +1,6307 @@
+{
+  "database": "erp_bgs_staging",
+  "dialect": "auto",
+  "dialect_note": "Actual SQL dialect is determined at runtime by config.settings.is_sqlite (SQLite in dev, PostgreSQL in prod)",
+  "tables": {
+    "orders_buyer": {
+      "description": "Stores information about buyers who place orders.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Unique identifier for the buyer."
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": "Name of the buyer."
+        },
+        "code": {
+          "type": "varchar(50)",
+          "description": "Buyer code or reference."
+        },
+        "country": {
+          "type": "varchar(100)",
+          "description": "Country of the buyer."
+        },
+        "email": {
+          "type": "varchar(254)",
+          "description": "Email address of the buyer."
+        },
+        "phone": {
+          "type": "varchar(30)",
+          "description": "Phone number of the buyer."
+        },
+        "address": {
+          "type": "text",
+          "description": "Address of the buyer."
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Timestamp when the buyer was created."
+        },
+        "updated_at": {
+          "type": "timestamp",
+          "description": "Timestamp when the buyer was last updated."
+        },
+        "extra": {
+          "type": "TEXT",
+          "description": ""
+        }
+      }
+    },
+    "orders_style": {
+      "description": "Garment style definitions — each style has a style number, category (shirt, trouser, jacket, etc.) and is linked to BOM items.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Style ID"
+        },
+        "style_no": {
+          "type": "varchar(50)",
+          "description": "Unique style number (e.g. ST-2024-001)"
+        },
+        "description": {
+          "type": "varchar(300)",
+          "description": "Style description"
+        },
+        "category": {
+          "type": "varchar(30)",
+          "description": "Garment category: shirt, trouser, jacket, dress, polo, sweater, other"
+        },
+        "image_url": {
+          "type": "varchar(200)",
+          "description": "URL to style image"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "updated_at": {
+          "type": "timestamp",
+          "description": "Last update time"
+        },
+        "extra": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "design_image": {
+          "type": "varchar(100)",
+          "description": ""
+        }
+      }
+    },
+    "orders_order": {
+      "description": "Purchase orders from buyers. Each order links a buyer and style with quantity, pricing, and status tracking. Central entity for production, shipping, and invoicing.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Order ID"
+        },
+        "po_number": {
+          "type": "varchar(50)",
+          "description": "Unique Purchase Order number"
+        },
+        "buyer_id": {
+          "type": "bigint",
+          "description": "FK → orders_buyer.id"
+        },
+        "style_id": {
+          "type": "bigint",
+          "description": "FK → orders_style.id"
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Total pieces ordered"
+        },
+        "unit_price": {
+          "type": "numeric(12,2)",
+          "description": "FOB price per piece"
+        },
+        "total_value": {
+          "type": "numeric(14,2)",
+          "description": "quantity × unit_price (auto-calculated)"
+        },
+        "currency": {
+          "type": "varchar(5)",
+          "description": "Currency code (default USD)"
+        },
+        "status": {
+          "type": "varchar(20)",
+          "description": "Order status: draft, confirmed, in_production, shipped, completed, cancelled"
+        },
+        "order_date": {
+          "type": "date",
+          "description": "Date order was placed"
+        },
+        "ship_date": {
+          "type": "date",
+          "description": "Target ship date"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "updated_at": {
+          "type": "timestamp",
+          "description": "Last update time"
+        },
+        "extra": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "size_group_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_bomitem": {
+      "description": "Bill of Materials — line items for each style, defining fabric, trims, and accessories with consumption rates and costs.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "BOM item ID"
+        },
+        "style_id": {
+          "type": "bigint",
+          "description": "FK → orders_style.id"
+        },
+        "item_name": {
+          "type": "varchar(200)",
+          "description": "Material name (e.g. Cotton Twill 58in)"
+        },
+        "category": {
+          "type": "varchar(20)",
+          "description": "Material category: fabric, trim, accessory, packaging, label, other"
+        },
+        "unit": {
+          "type": "varchar(20)",
+          "description": "Unit of measure (yards, meters, pcs)"
+        },
+        "consumption_per_pcs": {
+          "type": "numeric(10,4)",
+          "description": "Material needed per garment piece"
+        },
+        "unit_cost": {
+          "type": "numeric(12,2)",
+          "description": "Cost per unit of material"
+        },
+        "wastage_pct": {
+          "type": "numeric(5,2)",
+          "description": "Wastage percentage to add"
+        },
+        "supplier_name": {
+          "type": "varchar(200)",
+          "description": "Supplier name for this material"
+        }
+      }
+    },
+    "orders_costingsheet": {
+      "description": "Order cost breakdown — CM cost, fabric cost, trims, wash, print/embroidery, overhead, commercial, and profit margin. One per order.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Costing sheet ID"
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": "FK → orders_order.id (one-to-one)"
+        },
+        "cm_cost": {
+          "type": "numeric(10,2)",
+          "description": "Cut & Make cost per piece"
+        },
+        "fabric_cost": {
+          "type": "numeric(10,2)",
+          "description": "Total fabric cost per piece"
+        },
+        "trim_cost": {
+          "type": "numeric(10,2)",
+          "description": "Trims cost per piece"
+        },
+        "wash_cost": {
+          "type": "numeric(10,2)",
+          "description": "Wash cost per piece"
+        },
+        "print_emb_cost": {
+          "type": "numeric(10,2)",
+          "description": "Print/Embroidery cost per piece"
+        },
+        "overhead_cost": {
+          "type": "numeric(10,2)",
+          "description": "Factory overhead per piece"
+        },
+        "commercial_cost": {
+          "type": "numeric(10,2)",
+          "description": "Banking, LC charges per piece"
+        },
+        "profit_margin_pct": {
+          "type": "numeric(5,2)",
+          "description": "Target profit margin %"
+        },
+        "is_locked": {
+          "type": "boolean",
+          "description": "Whether costing is locked (order confirmed)"
+        },
+        "version": {
+          "type": "integer",
+          "description": "Costing version (incremented on amendment)"
+        },
+        "notes": {
+          "type": "text",
+          "description": "Costing notes"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "updated_at": {
+          "type": "timestamp",
+          "description": "Last update time"
+        },
+        "locked_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "locked_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_timeaction": {
+      "description": "Time & Action calendar milestones for each order — planned vs actual dates for fabric arrival, cutting, sewing, finishing, shipment, etc.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "T&A record ID"
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": "FK → orders_order.id"
+        },
+        "milestone": {
+          "type": "varchar(200)",
+          "description": "Milestone name (e.g. Fabric In, Cutting Start, Shipment)"
+        },
+        "planned_date": {
+          "type": "date",
+          "description": "Planned date for this milestone"
+        },
+        "actual_date": {
+          "type": "date",
+          "description": "Actual completion date (null if pending)"
+        },
+        "responsible": {
+          "type": "varchar(100)",
+          "description": "Person responsible"
+        },
+        "status": {
+          "type": "varchar(20)",
+          "description": "Status: pending, done, delayed"
+        },
+        "remarks": {
+          "type": "varchar(300)",
+          "description": "Additional remarks"
+        }
+      }
+    },
+    "orders_lead": {
+      "description": "CRM sales leads / prospects with pipeline stage tracking, priority, expected value, and win probability.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Lead ID"
+        },
+        "title": {
+          "type": "varchar(200)",
+          "description": "Opportunity description"
+        },
+        "buyer_id": {
+          "type": "bigint",
+          "description": "FK → orders_buyer.id (optional)"
+        },
+        "contact_name": {
+          "type": "varchar(200)",
+          "description": "Contact person name"
+        },
+        "company": {
+          "type": "varchar(200)",
+          "description": "Company name if no buyer linked"
+        },
+        "stage": {
+          "type": "varchar(15)",
+          "description": "Pipeline stage: new, contacted, qualified, proposal, negotiation, won, lost"
+        },
+        "priority": {
+          "type": "varchar(10)",
+          "description": "Priority: low, medium, high"
+        },
+        "source": {
+          "type": "varchar(15)",
+          "description": "Source: website, referral, trade_show, email, cold_call, linkedin, other"
+        },
+        "expected_value": {
+          "type": "numeric(12,2)",
+          "description": "Expected order value"
+        },
+        "probability": {
+          "type": "integer",
+          "description": "Win probability percentage (0-100)"
+        },
+        "expected_close_date": {
+          "type": "date",
+          "description": "Expected closing date"
+        },
+        "assigned_to_id": {
+          "type": "bigint",
+          "description": "FK → accounts_user.id (sales rep)"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Lead creation time"
+        },
+        "updated_at": {
+          "type": "timestamp",
+          "description": "Last update time"
+        },
+        "contact_email": {
+          "type": "varchar(254)",
+          "description": ""
+        },
+        "contact_phone": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "converted_order_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_campaign": {
+      "description": "Marketing campaigns — budget, spend, lead generation, conversions, and ROI tracking for buyer acquisition.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Campaign ID"
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": "Campaign name"
+        },
+        "channel": {
+          "type": "varchar(20)",
+          "description": "Channel: trade_show, digital_ads, email_campaign, social_media, referral_program, cold_outreach, other"
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": "Status: planned, active, paused, completed"
+        },
+        "budget": {
+          "type": "numeric(12,2)",
+          "description": "Total campaign budget"
+        },
+        "spent": {
+          "type": "numeric(12,2)",
+          "description": "Amount spent so far"
+        },
+        "start_date": {
+          "type": "date",
+          "description": "Campaign start date"
+        },
+        "end_date": {
+          "type": "date",
+          "description": "Campaign end date"
+        },
+        "target_leads": {
+          "type": "integer",
+          "description": "Target number of leads"
+        },
+        "leads_generated": {
+          "type": "integer",
+          "description": "Actual leads generated"
+        },
+        "conversions": {
+          "type": "integer",
+          "description": "Leads converted to orders"
+        },
+        "revenue_generated": {
+          "type": "numeric(14,2)",
+          "description": "Revenue from converted leads"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "description": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_sample": {
+      "description": "Sample tracking from development through buyer approval — salesman, pre-production, size set, and shipment samples.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Sample ID"
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": "FK → orders_order.id (optional)"
+        },
+        "style_id": {
+          "type": "bigint",
+          "description": "FK → orders_style.id"
+        },
+        "buyer_id": {
+          "type": "bigint",
+          "description": "FK → orders_buyer.id"
+        },
+        "sample_type": {
+          "type": "varchar(15)",
+          "description": "Type: sms, pp, size_set, pre_prod, top, shipment"
+        },
+        "status": {
+          "type": "varchar(20)",
+          "description": "Status: pending, in_development, submitted, approved, rejected, revised"
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Number of sample pieces"
+        },
+        "sent_date": {
+          "type": "date",
+          "description": "Date sent to buyer"
+        },
+        "approval_date": {
+          "type": "date",
+          "description": "Date approved by buyer"
+        },
+        "courier_ref": {
+          "type": "varchar(100)",
+          "description": "Courier tracking reference"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "comments": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "assigned_to_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_production": {
+      "description": "Production stage tracking — cutting, sewing, finishing, QC, packing with quantity, defects, and progress per order.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Production record ID"
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": "FK → orders_order.id"
+        },
+        "stage": {
+          "type": "varchar(20)",
+          "description": "Stage: cutting, sewing, finishing, qc, packing"
+        },
+        "status": {
+          "type": "varchar(20)",
+          "description": "Status: pending, in_progress, completed, on_hold"
+        },
+        "line_no": {
+          "type": "varchar(50)",
+          "description": "Production line number"
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Pieces produced at this stage"
+        },
+        "defects": {
+          "type": "integer",
+          "description": "Number of defects found"
+        },
+        "defect_severity": {
+          "type": "varchar(10)",
+          "description": "Severity: none, minor, major, critical"
+        },
+        "start_date": {
+          "type": "date",
+          "description": "Stage start date"
+        },
+        "end_date": {
+          "type": "date",
+          "description": "Stage end date"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "updated_at": {
+          "type": "timestamp",
+          "description": "Last update time"
+        },
+        "extra": {
+          "type": "TEXT",
+          "description": ""
+        }
+      }
+    },
+    "production_inspection": {
+      "description": "AQL quality inspections — inline, endline, final, pre-shipment with defect counts by severity and pass/fail result.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Inspection ID"
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": "FK → orders_order.id"
+        },
+        "inspection_type": {
+          "type": "varchar(20)",
+          "description": "Type: inline, endline, final, pre_shipment"
+        },
+        "aql_level": {
+          "type": "varchar(5)",
+          "description": "AQL level: 1.0, 1.5, 2.5, 4.0, 6.5"
+        },
+        "lot_size": {
+          "type": "integer",
+          "description": "Total lot quantity inspected"
+        },
+        "sample_size": {
+          "type": "integer",
+          "description": "Number of pieces sampled"
+        },
+        "defects_found": {
+          "type": "integer",
+          "description": "Total defects found"
+        },
+        "defects_major": {
+          "type": "integer",
+          "description": "Major defects"
+        },
+        "defects_minor": {
+          "type": "integer",
+          "description": "Minor defects"
+        },
+        "defects_critical": {
+          "type": "integer",
+          "description": "Critical defects"
+        },
+        "result": {
+          "type": "varchar(15)",
+          "description": "Result: pass, fail, conditional"
+        },
+        "remarks": {
+          "type": "text",
+          "description": "Inspector remarks"
+        },
+        "inspection_date": {
+          "type": "date",
+          "description": "Date of inspection"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "inspected_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_complianceaudit": {
+      "description": "Factory compliance audits — social, environmental, quality, fire safety. Tracks BSCI/WRAP/SEDEX certifications, scores, findings.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Audit ID"
+        },
+        "audit_type": {
+          "type": "varchar(20)",
+          "description": "Type: social, environmental, quality_system, fire_safety, structural"
+        },
+        "certification": {
+          "type": "varchar(20)",
+          "description": "Standard: bsci, wrap, sedex, oeko_tex, gots, iso9001, sa8000, other"
+        },
+        "auditor": {
+          "type": "varchar(200)",
+          "description": "Auditing body or person"
+        },
+        "audit_date": {
+          "type": "date",
+          "description": "Date of audit"
+        },
+        "expiry_date": {
+          "type": "date",
+          "description": "Certification expiry date"
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": "Status: scheduled, in_progress, completed, failed"
+        },
+        "score": {
+          "type": "numeric(5,1)",
+          "description": "Audit score / rating"
+        },
+        "findings": {
+          "type": "text",
+          "description": "Key findings or non-conformities"
+        },
+        "corrective_actions": {
+          "type": "text",
+          "description": "Required corrective actions"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "attachments_info": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_machine": {
+      "description": "Factory machines — sewing machines, cutting tables, pressing equipment. Tracks status, maintenance, depreciation.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Machine record ID"
+        },
+        "machine_id": {
+          "type": "varchar(50)",
+          "description": "Unique machine identifier code"
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": "Machine name"
+        },
+        "machine_type": {
+          "type": "varchar(100)",
+          "description": "Type (Single Needle, Overlock, Flatlock)"
+        },
+        "location": {
+          "type": "varchar(200)",
+          "description": "Floor / production line"
+        },
+        "status": {
+          "type": "varchar(20)",
+          "description": "Status: active, inactive, under_maintenance"
+        },
+        "purchase_date": {
+          "type": "date",
+          "description": "Purchase date"
+        },
+        "last_maintenance": {
+          "type": "date",
+          "description": "Last maintenance date"
+        },
+        "next_maintenance": {
+          "type": "date",
+          "description": "Next scheduled maintenance"
+        },
+        "purchase_cost": {
+          "type": "numeric(12,2)",
+          "description": "Original purchase cost"
+        },
+        "total_run_hours": {
+          "type": "numeric(10,1)",
+          "description": "Total production hours logged"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "gl_asset_account_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "gl_depreciation_account_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "pm_interval_hours": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "salvage_value": {
+          "type": "decimal",
+          "description": ""
+        },
+        "useful_life_years": {
+          "type": "integer unsigned",
+          "description": ""
+        }
+      }
+    },
+    "production_maintenancelog": {
+      "description": "Machine maintenance records — preventive, corrective, breakdown, calibration with cost and downtime.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Log ID"
+        },
+        "machine_id": {
+          "type": "bigint",
+          "description": "FK → production_machine.id"
+        },
+        "maintenance_type": {
+          "type": "varchar(15)",
+          "description": "Type: preventive, corrective, breakdown, calibration"
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": "Status: scheduled, in_progress, completed, cancelled"
+        },
+        "scheduled_date": {
+          "type": "date",
+          "description": "Scheduled date"
+        },
+        "completed_date": {
+          "type": "date",
+          "description": "Completion date"
+        },
+        "downtime_hours": {
+          "type": "numeric(6,1)",
+          "description": "Machine downtime hours"
+        },
+        "description": {
+          "type": "text",
+          "description": "Maintenance description"
+        },
+        "technician": {
+          "type": "varchar(200)",
+          "description": "Technician name"
+        },
+        "cost": {
+          "type": "numeric(10,2)",
+          "description": "Maintenance cost"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "performed_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_productiontarget": {
+      "description": "Daily production targets vs achievement per line — target qty, achieved qty, rejections, overtime for efficiency analysis.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Target record ID"
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": "FK → orders_order.id"
+        },
+        "line_no": {
+          "type": "varchar(50)",
+          "description": "Production line number"
+        },
+        "target_date": {
+          "type": "date",
+          "description": "Target date"
+        },
+        "target_qty": {
+          "type": "integer",
+          "description": "Target quantity"
+        },
+        "achieved_qty": {
+          "type": "integer",
+          "description": "Actual pieces produced"
+        },
+        "reject_qty": {
+          "type": "integer",
+          "description": "Rejected pieces"
+        },
+        "overtime_hours": {
+          "type": "numeric(5,1)",
+          "description": "Overtime hours worked"
+        },
+        "remarks": {
+          "type": "varchar(300)",
+          "description": "Remarks"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        }
+      }
+    },
+    "production_cuttingplan": {
+      "description": "Fabric cutting plans — marker planning with ply count, consumption, wastage, and actual vs planned quantities.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Cutting plan ID"
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": "FK → orders_order.id"
+        },
+        "plan_number": {
+          "type": "varchar(50)",
+          "description": "Unique cutting plan number"
+        },
+        "fabric_type": {
+          "type": "varchar(200)",
+          "description": "Fabric type"
+        },
+        "color": {
+          "type": "varchar(100)",
+          "description": "Fabric color"
+        },
+        "total_plies": {
+          "type": "integer",
+          "description": "Number of fabric plies"
+        },
+        "fabric_consumption": {
+          "type": "numeric(14,2)",
+          "description": "Planned fabric consumption"
+        },
+        "actual_consumption": {
+          "type": "numeric(14,2)",
+          "description": "Actual fabric used"
+        },
+        "wastage_pct": {
+          "type": "numeric(5,2)",
+          "description": "Wastage percentage"
+        },
+        "planned_qty": {
+          "type": "integer",
+          "description": "Pieces planned to cut"
+        },
+        "actual_qty": {
+          "type": "integer",
+          "description": "Pieces actually cut"
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": "Status: planned, in_progress, completed, cancelled"
+        },
+        "cutting_date": {
+          "type": "date",
+          "description": "Date of cutting"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "marker_length": {
+          "type": "decimal",
+          "description": ""
+        },
+        "marker_width": {
+          "type": "decimal",
+          "description": ""
+        },
+        "table_no": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "remarks": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "finance_invoice": {
+      "description": "Sales invoices linked to orders and buyers — amounts, discounts, taxes, payment status, aging.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Invoice ID"
+        },
+        "invoice_number": {
+          "type": "varchar(50)",
+          "description": "Unique invoice number"
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": "FK → orders_order.id"
+        },
+        "buyer_id": {
+          "type": "bigint",
+          "description": "FK → orders_buyer.id"
+        },
+        "invoice_date": {
+          "type": "date",
+          "description": "Invoice date"
+        },
+        "due_date": {
+          "type": "date",
+          "description": "Payment due date"
+        },
+        "subtotal": {
+          "type": "numeric(14,2)",
+          "description": "Subtotal before discounts/tax"
+        },
+        "discount_pct": {
+          "type": "numeric(5,2)",
+          "description": "Discount percentage"
+        },
+        "tax_pct": {
+          "type": "numeric(5,2)",
+          "description": "Tax percentage"
+        },
+        "total_amount": {
+          "type": "numeric(14,2)",
+          "description": "Final invoice amount"
+        },
+        "paid_amount": {
+          "type": "numeric(14,2)",
+          "description": "Amount paid so far"
+        },
+        "currency": {
+          "type": "varchar(5)",
+          "description": "Currency (default USD)"
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": "Status: draft, sent, partial, paid, overdue, cancelled"
+        },
+        "notes": {
+          "type": "text",
+          "description": "Invoice notes"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "updated_at": {
+          "type": "timestamp",
+          "description": "Last update time"
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "finance_payment": {
+      "description": "Payment records against invoices — bank transfers, LC, TT, cheque with references.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Payment ID"
+        },
+        "invoice_id": {
+          "type": "bigint",
+          "description": "FK → finance_invoice.id"
+        },
+        "amount": {
+          "type": "numeric(14,2)",
+          "description": "Payment amount"
+        },
+        "payment_date": {
+          "type": "date",
+          "description": "Payment date"
+        },
+        "method": {
+          "type": "varchar(20)",
+          "description": "Method: bank_transfer, lc, tt, cheque, cash, other"
+        },
+        "reference": {
+          "type": "varchar(100)",
+          "description": "Transaction / LC reference"
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": "Payment notes"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "finance_account": {
+      "description": "Chart of Accounts — GL accounts organized hierarchically. Types: asset, liability, equity, revenue, expense.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Account ID"
+        },
+        "code": {
+          "type": "varchar(20)",
+          "description": "Account code (e.g. 1000, 2100)"
+        },
+        "name": {
+          "type": "varchar(150)",
+          "description": "Account name"
+        },
+        "account_type": {
+          "type": "varchar(12)",
+          "description": "Type: asset, liability, equity, revenue, expense"
+        },
+        "parent_id": {
+          "type": "bigint",
+          "description": "FK → finance_account.id (parent)"
+        },
+        "description": {
+          "type": "text",
+          "description": "Account description"
+        },
+        "is_active": {
+          "type": "boolean",
+          "description": "Whether active"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        }
+      }
+    },
+    "finance_journalentry": {
+      "description": "Journal entry headers with balanced debit/credit lines for double-entry bookkeeping.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Journal entry ID"
+        },
+        "entry_number": {
+          "type": "varchar(30)",
+          "description": "Unique entry number"
+        },
+        "date": {
+          "type": "date",
+          "description": "Entry date"
+        },
+        "description": {
+          "type": "varchar(300)",
+          "description": "Entry description"
+        },
+        "reference": {
+          "type": "varchar(100)",
+          "description": "Reference (Invoice #, PO #)"
+        },
+        "status": {
+          "type": "varchar(10)",
+          "description": "Status: draft, posted, void"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "finance_journalline": {
+      "description": "Debit/credit lines within journal entries — each references a GL account.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Journal line ID"
+        },
+        "journal_id": {
+          "type": "bigint",
+          "description": "FK → finance_journalentry.id"
+        },
+        "account_id": {
+          "type": "bigint",
+          "description": "FK → finance_account.id"
+        },
+        "description": {
+          "type": "varchar(200)",
+          "description": "Line description"
+        },
+        "debit": {
+          "type": "numeric(14,2)",
+          "description": "Debit amount"
+        },
+        "credit": {
+          "type": "numeric(14,2)",
+          "description": "Credit amount"
+        }
+      }
+    },
+    "finance_bankaccount": {
+      "description": "Company bank accounts — checking, savings, petty cash, LC with balances.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Bank account ID"
+        },
+        "account_name": {
+          "type": "varchar(150)",
+          "description": "Account display name"
+        },
+        "bank_name": {
+          "type": "varchar(150)",
+          "description": "Bank name"
+        },
+        "account_number": {
+          "type": "varchar(50)",
+          "description": "Bank account number (sensitive)"
+        },
+        "account_type": {
+          "type": "varchar(15)",
+          "description": "Type: checking, savings, petty_cash, lc"
+        },
+        "currency": {
+          "type": "varchar(5)",
+          "description": "Account currency"
+        },
+        "opening_balance": {
+          "type": "numeric(14,2)",
+          "description": "Opening balance"
+        },
+        "current_balance": {
+          "type": "numeric(14,2)",
+          "description": "Current balance"
+        },
+        "is_active": {
+          "type": "boolean",
+          "description": "Whether active"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "gl_account_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "finance_banktransaction": {
+      "description": "Bank transactions — deposits, withdrawals, transfers, fees with running balance.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Transaction ID"
+        },
+        "bank_account_id": {
+          "type": "bigint",
+          "description": "FK → finance_bankaccount.id"
+        },
+        "transaction_type": {
+          "type": "varchar(12)",
+          "description": "Type: deposit, withdrawal, transfer, fee"
+        },
+        "amount": {
+          "type": "numeric(14,2)",
+          "description": "Amount"
+        },
+        "date": {
+          "type": "date",
+          "description": "Transaction date"
+        },
+        "description": {
+          "type": "varchar(300)",
+          "description": "Description"
+        },
+        "reference": {
+          "type": "varchar(100)",
+          "description": "Reference number"
+        },
+        "running_balance": {
+          "type": "numeric(14,2)",
+          "description": "Balance after this transaction"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "payment_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "finance_budget": {
+      "description": "Monthly budget vs actual per department and expense account — for variance analysis.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Budget record ID"
+        },
+        "department": {
+          "type": "varchar(100)",
+          "description": "Department name"
+        },
+        "account_id": {
+          "type": "bigint",
+          "description": "FK → finance_account.id"
+        },
+        "month": {
+          "type": "date",
+          "description": "Budget month (first day)"
+        },
+        "budgeted_amount": {
+          "type": "numeric(14,2)",
+          "description": "Budgeted amount"
+        },
+        "actual_amount": {
+          "type": "numeric(14,2)",
+          "description": "Actual spent"
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": "Budget notes"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        }
+      }
+    },
+    "finance_letterofcredit": {
+      "description": "Letter of Credit management — LC lifecycle from draft to payment with banks, amendments, and discrepancies.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "LC ID"
+        },
+        "lc_number": {
+          "type": "varchar(100)",
+          "description": "Unique LC number"
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": "FK → orders_order.id"
+        },
+        "buyer_id": {
+          "type": "bigint",
+          "description": "FK → orders_buyer.id"
+        },
+        "lc_type": {
+          "type": "varchar(20)",
+          "description": "Type: at_sight, usance, deferred, revolving, transferable, back_to_back"
+        },
+        "status": {
+          "type": "varchar(25)",
+          "description": "Status: draft, applied, opened, amended, documents_submitted, accepted, discrepant, paid, expired, cancelled"
+        },
+        "issuing_bank": {
+          "type": "varchar(200)",
+          "description": "Buyer's bank"
+        },
+        "advising_bank": {
+          "type": "varchar(200)",
+          "description": "Our bank"
+        },
+        "amount": {
+          "type": "numeric(14,2)",
+          "description": "LC amount"
+        },
+        "currency": {
+          "type": "varchar(5)",
+          "description": "LC currency"
+        },
+        "opening_date": {
+          "type": "date",
+          "description": "LC opening date"
+        },
+        "expiry_date": {
+          "type": "date",
+          "description": "LC expiry date"
+        },
+        "shipment_deadline": {
+          "type": "date",
+          "description": "Latest shipment date"
+        },
+        "tolerance_pct": {
+          "type": "numeric(5,2)",
+          "description": "Quantity tolerance %"
+        },
+        "payment_received": {
+          "type": "numeric(14,2)",
+          "description": "Amount received"
+        },
+        "payment_date": {
+          "type": "date",
+          "description": "Payment date"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "updated_at": {
+          "type": "timestamp",
+          "description": "Last update time"
+        },
+        "latest_negotiation_date": {
+          "type": "date",
+          "description": ""
+        },
+        "amendments": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "special_conditions": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "discrepancies": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "gl_account_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_inventory": {
+      "description": "Raw material inventory — fabric, trims, accessories, packaging with stock levels and reorder points.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Item ID"
+        },
+        "item_name": {
+          "type": "varchar(200)",
+          "description": "Item name"
+        },
+        "item_code": {
+          "type": "varchar(50)",
+          "description": "Unique item code"
+        },
+        "type": {
+          "type": "varchar(20)",
+          "description": "Type: fabric, trim, accessory, packaging"
+        },
+        "unit": {
+          "type": "varchar(20)",
+          "description": "Unit of measure"
+        },
+        "quantity": {
+          "type": "numeric(14,2)",
+          "description": "Current stock quantity"
+        },
+        "min_level": {
+          "type": "numeric(14,2)",
+          "description": "Minimum stock level (reorder point)"
+        },
+        "warehouse": {
+          "type": "varchar(100)",
+          "description": "Warehouse name"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "updated_at": {
+          "type": "timestamp",
+          "description": "Last update time"
+        },
+        "extra": {
+          "type": "TEXT",
+          "description": ""
+        }
+      }
+    },
+    "inventory_stocktransaction": {
+      "description": "Stock movement ledger — every stock-in and stock-out with running balance and reference.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Transaction ID"
+        },
+        "item_id": {
+          "type": "bigint",
+          "description": "FK → inventory_inventory.id"
+        },
+        "txn_type": {
+          "type": "varchar(5)",
+          "description": "Type: in or out"
+        },
+        "quantity": {
+          "type": "numeric(14,2)",
+          "description": "Quantity moved"
+        },
+        "balance_after": {
+          "type": "numeric(14,2)",
+          "description": "Balance after transaction"
+        },
+        "reference": {
+          "type": "varchar(100)",
+          "description": "Reference (GRN, PO, Issue)"
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": "Notes"
+        },
+        "date": {
+          "type": "date",
+          "description": "Transaction date"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_supplier": {
+      "description": "Raw material suppliers — fabric mills, trim vendors with contact info and category.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Supplier ID"
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": "Supplier name"
+        },
+        "code": {
+          "type": "varchar(50)",
+          "description": "Unique supplier code"
+        },
+        "contact_person": {
+          "type": "varchar(200)",
+          "description": "Contact person"
+        },
+        "email": {
+          "type": "varchar(254)",
+          "description": "Contact email"
+        },
+        "phone": {
+          "type": "varchar(30)",
+          "description": "Phone"
+        },
+        "country": {
+          "type": "varchar(100)",
+          "description": "Country"
+        },
+        "category": {
+          "type": "varchar(50)",
+          "description": "Category (Fabric, Trim, Packaging)"
+        },
+        "is_active": {
+          "type": "boolean",
+          "description": "Whether active"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "address": {
+          "type": "TEXT",
+          "description": ""
+        }
+      }
+    },
+    "inventory_purchaseorder": {
+      "description": "Raw material purchase orders to suppliers — tracks order status from draft through receipt.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "PO ID"
+        },
+        "po_number": {
+          "type": "varchar(50)",
+          "description": "Unique PO number"
+        },
+        "supplier_id": {
+          "type": "bigint",
+          "description": "FK → inventory_supplier.id"
+        },
+        "order_date": {
+          "type": "date",
+          "description": "PO date"
+        },
+        "expected_date": {
+          "type": "date",
+          "description": "Expected delivery date"
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": "Status: draft, sent, partial, received, cancelled"
+        },
+        "notes": {
+          "type": "text",
+          "description": "Notes"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_grn": {
+      "description": "Goods Received Notes — material receipt records with approval status.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "GRN ID"
+        },
+        "grn_number": {
+          "type": "varchar(50)",
+          "description": "Unique GRN number"
+        },
+        "supplier": {
+          "type": "varchar(200)",
+          "description": "Supplier name"
+        },
+        "received_date": {
+          "type": "date",
+          "description": "Receipt date"
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": "Status: draft, approved, cancelled"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_warehouse": {
+      "description": "Warehouse master — raw material, WIP, finished goods warehouses with capacity.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Warehouse ID"
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": "Warehouse name"
+        },
+        "code": {
+          "type": "varchar(30)",
+          "description": "Unique code"
+        },
+        "type": {
+          "type": "varchar(15)",
+          "description": "Type: raw, wip, finished, cold, general"
+        },
+        "manager": {
+          "type": "varchar(200)",
+          "description": "Manager name"
+        },
+        "capacity": {
+          "type": "numeric(14,2)",
+          "description": "Capacity in cubic metres"
+        },
+        "is_active": {
+          "type": "boolean",
+          "description": "Whether active"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "address": {
+          "type": "TEXT",
+          "description": ""
+        }
+      }
+    },
+    "inventory_stocktransfer": {
+      "description": "Inter-warehouse stock transfers — material movement between warehouses.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Transfer ID"
+        },
+        "transfer_number": {
+          "type": "varchar(50)",
+          "description": "Unique transfer number"
+        },
+        "from_warehouse_id": {
+          "type": "bigint",
+          "description": "FK → inventory_warehouse.id (source)"
+        },
+        "to_warehouse_id": {
+          "type": "bigint",
+          "description": "FK → inventory_warehouse.id (dest)"
+        },
+        "item_id": {
+          "type": "bigint",
+          "description": "FK → inventory_inventory.id"
+        },
+        "quantity": {
+          "type": "numeric(14,2)",
+          "description": "Quantity transferred"
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": "Status: pending, in_transit, completed, cancelled"
+        },
+        "transfer_date": {
+          "type": "date",
+          "description": "Transfer date"
+        },
+        "completed_date": {
+          "type": "date",
+          "description": "Completion date"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "reason": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "from_location_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "to_location_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_employee": {
+      "description": "Employee master — personal info, department, designation, salary, employment status. Linked to payroll.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Employee record ID"
+        },
+        "employee_id": {
+          "type": "varchar(20)",
+          "description": "Unique employee ID code"
+        },
+        "first_name": {
+          "type": "varchar(100)",
+          "description": "First name"
+        },
+        "last_name": {
+          "type": "varchar(100)",
+          "description": "Last name"
+        },
+        "gender": {
+          "type": "varchar(10)",
+          "description": "Gender: male, female, other"
+        },
+        "date_of_birth": {
+          "type": "date",
+          "description": "Date of birth (sensitive)"
+        },
+        "phone": {
+          "type": "varchar(30)",
+          "description": "Phone number"
+        },
+        "email": {
+          "type": "varchar(254)",
+          "description": "Email"
+        },
+        "department": {
+          "type": "varchar(100)",
+          "description": "Department"
+        },
+        "designation": {
+          "type": "varchar(100)",
+          "description": "Job title"
+        },
+        "date_of_joining": {
+          "type": "date",
+          "description": "Employment start date"
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": "Status: active, inactive, terminated"
+        },
+        "basic_salary": {
+          "type": "numeric(12,2)",
+          "description": "Monthly basic salary (sensitive)"
+        },
+        "emergency_contact": {
+          "type": "varchar(200)",
+          "description": "Emergency contact (sensitive)"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "address": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "user_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_worker": {
+      "description": "Factory floor workers (no login) — production-line workers identified by barcode with labor type, pay type, skill level.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Worker ID"
+        },
+        "worker_code": {
+          "type": "varchar(30)",
+          "description": "Unique barcode-scannable worker code"
+        },
+        "first_name": {
+          "type": "varchar(100)",
+          "description": "First name"
+        },
+        "last_name": {
+          "type": "varchar(100)",
+          "description": "Last name"
+        },
+        "labor_type": {
+          "type": "varchar(15)",
+          "description": "Type: permanent, temporary, subcontractor"
+        },
+        "pay_type": {
+          "type": "varchar(12)",
+          "description": "Pay: monthly, piece_rate, hybrid, daily"
+        },
+        "department": {
+          "type": "varchar(100)",
+          "description": "Department"
+        },
+        "line_no": {
+          "type": "varchar(50)",
+          "description": "Production line"
+        },
+        "skill_level": {
+          "type": "varchar(50)",
+          "description": "Skill level"
+        },
+        "daily_rate": {
+          "type": "numeric(10,2)",
+          "description": "Daily wage rate"
+        },
+        "status": {
+          "type": "varchar(12)",
+          "description": "Status: active, inactive, terminated, on_leave"
+        },
+        "date_joined": {
+          "type": "date",
+          "description": "Date joined"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "phone": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "date_left": {
+          "type": "date",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_attendance": {
+      "description": "Daily attendance records — check-in/out, status (present/absent/late/half_day), overtime hours.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Attendance ID"
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": "FK → hr_employee.id"
+        },
+        "date": {
+          "type": "date",
+          "description": "Attendance date"
+        },
+        "status": {
+          "type": "varchar(12)",
+          "description": "Status: present, absent, late, half_day, leave, holiday, early_leave, off_day"
+        },
+        "check_in": {
+          "type": "time",
+          "description": "Clock-in time"
+        },
+        "check_out": {
+          "type": "time",
+          "description": "Clock-out time"
+        },
+        "overtime_hours": {
+          "type": "numeric(4,1)",
+          "description": "Overtime hours"
+        },
+        "remarks": {
+          "type": "varchar(200)",
+          "description": "Remarks"
+        }
+      }
+    },
+    "hr_leaverequest": {
+      "description": "Employee leave requests — annual, sick, casual, maternity, unpaid with approval workflow.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Leave request ID"
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": "FK → hr_employee.id"
+        },
+        "leave_type": {
+          "type": "varchar(15)",
+          "description": "Type: annual, sick, casual, maternity, unpaid, other"
+        },
+        "start_date": {
+          "type": "date",
+          "description": "Start date"
+        },
+        "end_date": {
+          "type": "date",
+          "description": "End date"
+        },
+        "reason": {
+          "type": "text",
+          "description": "Reason"
+        },
+        "status": {
+          "type": "varchar(10)",
+          "description": "Status: pending, approved, rejected, cancelled"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Request time"
+        },
+        "approved_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_payroll": {
+      "description": "Monthly payroll batches — processing status, total amount, employee count.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Payroll batch ID"
+        },
+        "month": {
+          "type": "date",
+          "description": "Payroll month (first day)"
+        },
+        "status": {
+          "type": "varchar(10)",
+          "description": "Status: draft, processed, approved, paid"
+        },
+        "total_amount": {
+          "type": "numeric(14,2)",
+          "description": "Total payroll amount"
+        },
+        "employee_count": {
+          "type": "integer",
+          "description": "Employee count"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "approved_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "processed_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_salaryslip": {
+      "description": "Individual salary slips — gross, allowances, overtime, bonuses, deductions, net salary per employee per month.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Salary slip ID"
+        },
+        "payroll_id": {
+          "type": "bigint",
+          "description": "FK → hr_payroll.id"
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": "FK → hr_employee.id"
+        },
+        "basic_salary": {
+          "type": "numeric(12,2)",
+          "description": "Basic salary"
+        },
+        "gross_salary": {
+          "type": "numeric(12,2)",
+          "description": "Gross salary"
+        },
+        "days_worked": {
+          "type": "integer",
+          "description": "Days worked"
+        },
+        "days_absent": {
+          "type": "integer",
+          "description": "Days absent"
+        },
+        "late_count": {
+          "type": "integer",
+          "description": "Late arrivals"
+        },
+        "overtime_hours": {
+          "type": "numeric(6,1)",
+          "description": "Overtime hours"
+        },
+        "overtime_amount": {
+          "type": "numeric(12,2)",
+          "description": "Overtime payment"
+        },
+        "attendance_bonus": {
+          "type": "numeric(12,2)",
+          "description": "Attendance bonus"
+        },
+        "bonus": {
+          "type": "numeric(12,2)",
+          "description": "Other bonuses"
+        },
+        "deductions": {
+          "type": "numeric(12,2)",
+          "description": "Total deductions"
+        },
+        "net_salary": {
+          "type": "numeric(12,2)",
+          "description": "Net salary (sensitive)"
+        },
+        "remarks": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "attendance_days": {
+          "type": "decimal",
+          "description": ""
+        },
+        "bank_name": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "conveyance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "early_leave_count": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "fine": {
+          "type": "decimal",
+          "description": ""
+        },
+        "food_allowance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "half_days": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "hd_allowance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "holidays": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "house_rent": {
+          "type": "decimal",
+          "description": ""
+        },
+        "leave_days": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "medical_allowance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "other_allowance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "other_deductions": {
+          "type": "decimal",
+          "description": ""
+        },
+        "overtime_rate": {
+          "type": "decimal",
+          "description": ""
+        },
+        "tds": {
+          "type": "decimal",
+          "description": ""
+        },
+        "weekends": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "working_days_in_month": {
+          "type": "integer unsigned",
+          "description": ""
+        }
+      }
+    },
+    "logistics_shipment": {
+      "description": "Export shipments — sea/air/road from factory to buyer with vessel, container, ETD/ETA tracking.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Shipment ID"
+        },
+        "shipment_number": {
+          "type": "varchar(50)",
+          "description": "Unique shipment number"
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": "FK → orders_order.id"
+        },
+        "buyer_id": {
+          "type": "bigint",
+          "description": "FK → orders_buyer.id"
+        },
+        "mode": {
+          "type": "varchar(10)",
+          "description": "Mode: sea, air, road, courier"
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": "Status: planning, booked, in_transit, arrived, delivered, cancelled"
+        },
+        "carrier": {
+          "type": "varchar(200)",
+          "description": "Carrier name"
+        },
+        "vessel_flight": {
+          "type": "varchar(200)",
+          "description": "Vessel / flight name"
+        },
+        "container_no": {
+          "type": "varchar(50)",
+          "description": "Container number"
+        },
+        "port_of_loading": {
+          "type": "varchar(100)",
+          "description": "Loading port"
+        },
+        "port_of_discharge": {
+          "type": "varchar(100)",
+          "description": "Discharge port"
+        },
+        "etd": {
+          "type": "date",
+          "description": "Estimated departure"
+        },
+        "eta": {
+          "type": "date",
+          "description": "Estimated arrival"
+        },
+        "actual_departure": {
+          "type": "date",
+          "description": "Actual departure"
+        },
+        "actual_arrival": {
+          "type": "date",
+          "description": "Actual arrival"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "bill_of_lading": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "logistics_freightcost": {
+      "description": "Freight costs per shipment — ocean/air freight, customs, clearing, insurance for landed cost.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Cost ID"
+        },
+        "shipment_id": {
+          "type": "bigint",
+          "description": "FK → logistics_shipment.id"
+        },
+        "cost_type": {
+          "type": "varchar(20)",
+          "description": "Type: ocean_freight, air_freight, inland_transport, customs_duty, clearing_charges, insurance, other"
+        },
+        "description": {
+          "type": "varchar(300)",
+          "description": "Cost description"
+        },
+        "amount": {
+          "type": "numeric(12,2)",
+          "description": "Amount"
+        },
+        "currency": {
+          "type": "varchar(5)",
+          "description": "Currency"
+        },
+        "vendor": {
+          "type": "varchar(200)",
+          "description": "Freight forwarder / agent"
+        },
+        "date": {
+          "type": "date",
+          "description": "Cost date"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "invoice_ref": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "logistics_shipmentbatch": {
+      "description": "Delivery batches within shipments — passed/rejected/goodwill quantities for rejection cost and relationship management.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "Batch ID"
+        },
+        "shipment_id": {
+          "type": "bigint",
+          "description": "FK → logistics_shipment.id"
+        },
+        "batch_number": {
+          "type": "integer",
+          "description": "Batch sequence"
+        },
+        "shipped_qty": {
+          "type": "integer",
+          "description": "Units shipped"
+        },
+        "passed_qty": {
+          "type": "integer",
+          "description": "Units accepted"
+        },
+        "rejected_qty": {
+          "type": "integer",
+          "description": "Units rejected"
+        },
+        "goodwill_qty": {
+          "type": "integer",
+          "description": "Free goodwill units"
+        },
+        "unit_cogs": {
+          "type": "numeric(12,2)",
+          "description": "Cost per unit"
+        },
+        "resolution": {
+          "type": "varchar(15)",
+          "description": "Resolution: pending, deduct, replace, bonus, accepted"
+        },
+        "batch_date": {
+          "type": "date",
+          "description": "Batch date"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "description": "Record creation time"
+        },
+        "resolution_notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "accounts_user": {
+      "description": "System users with authentication, roles, and department assignments.",
+      "columns": {
+        "id": {
+          "type": "bigint",
+          "primary_key": true,
+          "description": "User ID"
+        },
+        "username": {
+          "type": "varchar(150)",
+          "description": "Username"
+        },
+        "first_name": {
+          "type": "varchar(150)",
+          "description": "First name"
+        },
+        "last_name": {
+          "type": "varchar(150)",
+          "description": "Last name"
+        },
+        "email": {
+          "type": "varchar(254)",
+          "description": "Email"
+        },
+        "role": {
+          "type": "varchar(20)",
+          "description": "Role: admin, manager, merchandiser, production, warehouse, quality, cutting, sewing, finishing, maintenance, hr, finance, logistics, design, compliance, receptionist, viewer"
+        },
+        "department": {
+          "type": "varchar(100)",
+          "description": "Department"
+        },
+        "is_active": {
+          "type": "boolean",
+          "description": "Whether active"
+        },
+        "date_joined": {
+          "type": "timestamp",
+          "description": "Account creation date"
+        },
+        "last_login": {
+          "type": "timestamp",
+          "description": "Last login"
+        },
+        "password": {
+          "type": "varchar(128)",
+          "description": ""
+        },
+        "is_superuser": {
+          "type": "bool",
+          "description": ""
+        },
+        "is_staff": {
+          "type": "bool",
+          "description": ""
+        },
+        "phone": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "avatar_color": {
+          "type": "varchar(7)",
+          "description": ""
+        },
+        "is_2fa_enabled": {
+          "type": "bool",
+          "description": ""
+        },
+        "totp_secret": {
+          "type": "varchar(32)",
+          "description": ""
+        }
+      }
+    },
+    "accounts_loginlog": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "event": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "ip_address": {
+          "type": "char(39)",
+          "description": ""
+        },
+        "user_agent": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "timestamp": {
+          "type": "datetime",
+          "description": ""
+        },
+        "user_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "accounts_rolepermission": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "role": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "module": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "can_view": {
+          "type": "bool",
+          "description": ""
+        },
+        "can_create": {
+          "type": "bool",
+          "description": ""
+        },
+        "can_edit": {
+          "type": "bool",
+          "description": ""
+        },
+        "can_delete": {
+          "type": "bool",
+          "description": ""
+        }
+      }
+    },
+    "accounts_user_groups": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "user_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "group_id": {
+          "type": "INTEGER",
+          "description": ""
+        }
+      }
+    },
+    "accounts_user_user_permissions": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "user_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "permission_id": {
+          "type": "INTEGER",
+          "description": ""
+        }
+      }
+    },
+    "auth_group": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(150)",
+          "description": ""
+        }
+      }
+    },
+    "auth_group_permissions": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "group_id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "permission_id": {
+          "type": "INTEGER",
+          "description": ""
+        }
+      }
+    },
+    "auth_permission": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "content_type_id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "codename": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(255)",
+          "description": ""
+        }
+      }
+    },
+    "authtoken_token": {
+      "description": "",
+      "columns": {
+        "key": {
+          "type": "varchar(40)",
+          "description": ""
+        },
+        "created": {
+          "type": "datetime",
+          "description": ""
+        },
+        "user_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "core_alertconfig": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "event": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "channel": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "recipient_email": {
+          "type": "varchar(254)",
+          "description": ""
+        },
+        "recipient_role": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "telegram_chat_id": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "subject_template": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "body_template": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "core_approvalflow": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "module": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "record_id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "record_repr": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "action_description": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "approver_role": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "pending_changes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "resolved_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "approved_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "requested_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "approver_notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "checked_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "checked_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "checker_notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "checker_role": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "current_stage": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "rejection_stage": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "return_count": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "skip_checker": {
+          "type": "bool",
+          "description": ""
+        },
+        "policy_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "core_approvalpolicy": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "module": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "action_type": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "condition_field": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "condition_operator": {
+          "type": "varchar(5)",
+          "description": ""
+        },
+        "condition_value": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "checker_role": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "approver_role": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "skip_checker": {
+          "type": "bool",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "priority": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "core_approvalstep": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "step_order": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "stage_name": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "role_required": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "action": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "digital_signature": {
+          "type": "varchar(64)",
+          "description": ""
+        },
+        "acted_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "acted_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "approval_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "core_auditlog": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "module": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "action": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "record_id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "record_repr": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "changes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "ip_address": {
+          "type": "char(39)",
+          "description": ""
+        },
+        "timestamp": {
+          "type": "datetime",
+          "description": ""
+        },
+        "user_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "core_comment": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "module": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "record_id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "record_repr": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "body": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "priority": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "author_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "core_comment_mentioned_users": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "comment_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "user_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "core_document": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "module": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "record_id": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "title": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "doc_type": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "file": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "file_size": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "ai_description": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "uploaded_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "core_fieldconfig": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "module": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "field_name": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "label": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "is_required": {
+          "type": "bool",
+          "description": ""
+        },
+        "visibility": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "default_value": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "help_text": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "sort_order": {
+          "type": "INTEGER",
+          "description": ""
+        }
+      }
+    },
+    "core_notification": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "title": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "message": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "level": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "link": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "is_read": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "recipient_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "core_webhookconfig": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "url": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "events": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "secret": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "last_triggered": {
+          "type": "datetime",
+          "description": ""
+        },
+        "last_status_code": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "core_webhooklog": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "event": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "payload": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "status_code": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "response_body": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "success": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "webhook_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "core_workflowrule": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "module": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "trigger": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "trigger_field": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "trigger_value": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "action": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "action_target": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "action_value": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "priority": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "django_admin_log": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "object_id": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "object_repr": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "action_flag": {
+          "type": "smallint unsigned",
+          "description": ""
+        },
+        "change_message": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "content_type_id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "user_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "action_time": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "django_celery_results_chordcounter": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "sub_tasks": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "count": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "group_id": {
+          "type": "varchar(255)",
+          "description": ""
+        }
+      }
+    },
+    "django_celery_results_groupresult": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "group_id": {
+          "type": "varchar(255)",
+          "description": ""
+        },
+        "date_created": {
+          "type": "datetime",
+          "description": ""
+        },
+        "date_done": {
+          "type": "datetime",
+          "description": ""
+        },
+        "content_type": {
+          "type": "varchar(128)",
+          "description": ""
+        },
+        "content_encoding": {
+          "type": "varchar(64)",
+          "description": ""
+        },
+        "result": {
+          "type": "TEXT",
+          "description": ""
+        }
+      }
+    },
+    "django_celery_results_taskresult": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "task_id": {
+          "type": "varchar(255)",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "content_type": {
+          "type": "varchar(128)",
+          "description": ""
+        },
+        "content_encoding": {
+          "type": "varchar(64)",
+          "description": ""
+        },
+        "result": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "date_done": {
+          "type": "datetime",
+          "description": ""
+        },
+        "traceback": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "meta": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "task_args": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "task_kwargs": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "task_name": {
+          "type": "varchar(255)",
+          "description": ""
+        },
+        "date_created": {
+          "type": "datetime",
+          "description": ""
+        },
+        "worker": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "periodic_task_name": {
+          "type": "varchar(255)",
+          "description": ""
+        },
+        "date_started": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "django_content_type": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "app_label": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "model": {
+          "type": "varchar(100)",
+          "description": ""
+        }
+      }
+    },
+    "django_migrations": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "app": {
+          "type": "varchar(255)",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(255)",
+          "description": ""
+        },
+        "applied": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "django_session": {
+      "description": "",
+      "columns": {
+        "session_key": {
+          "type": "varchar(40)",
+          "description": ""
+        },
+        "session_data": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "expire_date": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "finance_taxrate": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "rate": {
+          "type": "decimal",
+          "description": ""
+        },
+        "description": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "is_default": {
+          "type": "bool",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "hr_biometricdevice": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "device_id": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(120)",
+          "description": ""
+        },
+        "device_type": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "ip_address": {
+          "type": "char(39)",
+          "description": ""
+        },
+        "port": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "location": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "api_key": {
+          "type": "varchar(128)",
+          "description": ""
+        },
+        "last_heartbeat": {
+          "type": "datetime",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "hr_biometricpunchlog": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "punch_id": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "card_number": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "punch_type": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "punch_time": {
+          "type": "datetime",
+          "description": ""
+        },
+        "raw_data": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "error_message": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "device_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "synced_to_attendance_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "worker_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_employeedocument": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "document_type": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "title": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "file": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "issue_date": {
+          "type": "date",
+          "description": ""
+        },
+        "expiry_date": {
+          "type": "date",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "uploaded_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_employeegroup": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(120)",
+          "description": ""
+        },
+        "description": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "group_type": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "leader_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "shift_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "organization_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_employeegroup_members": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "employeegroup_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_holiday": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "date": {
+          "type": "date",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "is_recurring": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "hr_leavebalance": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "leave_type": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "year": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "annual_entitlement": {
+          "type": "decimal",
+          "description": ""
+        },
+        "carried_forward": {
+          "type": "decimal",
+          "description": ""
+        },
+        "used": {
+          "type": "decimal",
+          "description": ""
+        },
+        "pending": {
+          "type": "decimal",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_livefeedimage": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "image": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "captured_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "punch_type": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "confidence": {
+          "type": "decimal",
+          "description": ""
+        },
+        "is_verified": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "device_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "punch_log_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "worker_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_operationrate": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "operation_name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "sam_minutes": {
+          "type": "decimal",
+          "description": ""
+        },
+        "rate_per_piece": {
+          "type": "decimal",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "style_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_organization": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "short_name": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "org_type": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "address": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "phone": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "email": {
+          "type": "varchar(254)",
+          "description": ""
+        },
+        "logo": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "parent_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_organizationsettings": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "weekend_day": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "work_hours_per_day": {
+          "type": "decimal",
+          "description": ""
+        },
+        "grace_period_minutes": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "half_day_threshold_hours": {
+          "type": "decimal",
+          "description": ""
+        },
+        "salary_month_days": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "ot_multiplier": {
+          "type": "decimal",
+          "description": ""
+        },
+        "attendance_bonus_amount": {
+          "type": "decimal",
+          "description": ""
+        },
+        "late_fine_threshold": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "late_fine_days_deduction": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "biometric_auto_sync": {
+          "type": "bool",
+          "description": ""
+        },
+        "biometric_sync_interval": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "currency_symbol": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "fiscal_year_start_month": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "organization_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_organizationuser": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "role": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "joined_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "organization_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "user_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_overtimebudget": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "department": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "month": {
+          "type": "date",
+          "description": ""
+        },
+        "budget_hours": {
+          "type": "decimal",
+          "description": ""
+        },
+        "budget_amount": {
+          "type": "decimal",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "hr_overtimerequest": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "date": {
+          "type": "date",
+          "description": ""
+        },
+        "hours": {
+          "type": "decimal",
+          "description": ""
+        },
+        "ot_type": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "rate_multiplier": {
+          "type": "decimal",
+          "description": ""
+        },
+        "reason": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "approved_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "department": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "approved_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_performancekpi": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "review_period": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "attendance_score": {
+          "type": "decimal",
+          "description": ""
+        },
+        "productivity_score": {
+          "type": "decimal",
+          "description": ""
+        },
+        "quality_score": {
+          "type": "decimal",
+          "description": ""
+        },
+        "overall_rating": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "goals": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "achievements": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "improvement_areas": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "review_date": {
+          "type": "date",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "reviewer_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_pieceworkrecord": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "date": {
+          "type": "date",
+          "description": ""
+        },
+        "quantity": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "rate": {
+          "type": "decimal",
+          "description": ""
+        },
+        "amount": {
+          "type": "decimal",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "worker_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "operation_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "recorded_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_salarystatisticdefault": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(120)",
+          "description": ""
+        },
+        "basic_salary": {
+          "type": "decimal",
+          "description": ""
+        },
+        "house_rent_pct": {
+          "type": "decimal",
+          "description": ""
+        },
+        "medical_allowance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "conveyance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "food_allowance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "other_allowance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "attendance_bonus": {
+          "type": "decimal",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "hr_salarystructure": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "house_rent": {
+          "type": "decimal",
+          "description": ""
+        },
+        "medical_allowance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "conveyance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "food_allowance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "other_allowance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "bank_name": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "bank_account": {
+          "type": "varchar(60)",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_shift": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "start_time": {
+          "type": "time",
+          "description": ""
+        },
+        "end_time": {
+          "type": "time",
+          "description": ""
+        },
+        "break_minutes": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "is_night_shift": {
+          "type": "bool",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "allowed_late_minutes": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "enable_late_status": {
+          "type": "bool",
+          "description": ""
+        },
+        "half_day_hours": {
+          "type": "decimal",
+          "description": ""
+        },
+        "late_override_minutes": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "late_override_status": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "present_hours": {
+          "type": "decimal",
+          "description": ""
+        }
+      }
+    },
+    "hr_shiftassignment": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "start_date": {
+          "type": "date",
+          "description": ""
+        },
+        "end_date": {
+          "type": "date",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "employee_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "shift_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_skill": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "description": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "is_mandatory": {
+          "type": "bool",
+          "description": ""
+        },
+        "renewal_months": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "machine_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "category_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_skillcategory": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "description": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "hr_temporaryhiring": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "start_date": {
+          "type": "date",
+          "description": ""
+        },
+        "end_date": {
+          "type": "date",
+          "description": ""
+        },
+        "daily_rate": {
+          "type": "decimal",
+          "description": ""
+        },
+        "days_worked": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "total_paid": {
+          "type": "decimal",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(12)",
+          "description": ""
+        },
+        "reason": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "worker_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_trainingrecord": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "title": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "trainer": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "training_date": {
+          "type": "date",
+          "description": ""
+        },
+        "duration_hours": {
+          "type": "decimal",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(12)",
+          "description": ""
+        },
+        "score": {
+          "type": "decimal",
+          "description": ""
+        },
+        "certificate_ref": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "recorded_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "skill_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "worker_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "hr_workerskill": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "proficiency": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "certified_date": {
+          "type": "date",
+          "description": ""
+        },
+        "expiry_date": {
+          "type": "date",
+          "description": ""
+        },
+        "certificate_ref": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "assessor_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "skill_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "worker_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_grnitem": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "quantity_received": {
+          "type": "decimal",
+          "description": ""
+        },
+        "quantity_accepted": {
+          "type": "decimal",
+          "description": ""
+        },
+        "quantity_rejected": {
+          "type": "decimal",
+          "description": ""
+        },
+        "unit_price": {
+          "type": "decimal",
+          "description": ""
+        },
+        "grn_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "item_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_materialissue": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "issue_number": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "issue_date": {
+          "type": "date",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "production_line": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "remarks": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "received_by": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "issued_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_materialissueitem": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "quantity_requested": {
+          "type": "decimal",
+          "description": ""
+        },
+        "quantity_issued": {
+          "type": "decimal",
+          "description": ""
+        },
+        "quantity_returned": {
+          "type": "decimal",
+          "description": ""
+        },
+        "unit_cost": {
+          "type": "decimal",
+          "description": ""
+        },
+        "remarks": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "issue_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "item_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_purchaseorderitem": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "quantity": {
+          "type": "decimal",
+          "description": ""
+        },
+        "unit_price": {
+          "type": "decimal",
+          "description": ""
+        },
+        "item_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "purchase_order_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_stockaudit": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "audit_number": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "audit_date": {
+          "type": "date",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "completed_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "auditor_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "warehouse_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_stockaudititem": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "system_quantity": {
+          "type": "decimal",
+          "description": ""
+        },
+        "physical_quantity": {
+          "type": "decimal",
+          "description": ""
+        },
+        "variance": {
+          "type": "decimal",
+          "description": ""
+        },
+        "unit_cost": {
+          "type": "decimal",
+          "description": ""
+        },
+        "variance_value": {
+          "type": "decimal",
+          "description": ""
+        },
+        "adjustment_reason": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "audit_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "item_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "inventory_warehouselocation": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "zone": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "rack": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "shelf": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "bin": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "current_qty": {
+          "type": "decimal",
+          "description": ""
+        },
+        "max_capacity": {
+          "type": "decimal",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "item_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "warehouse_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "logistics_customsdocument": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "document_type": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "document_number": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "issue_date": {
+          "type": "date",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "generated_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "shipment_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "logistics_deliverychallan": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "challan_no": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "challan_date": {
+          "type": "date",
+          "description": ""
+        },
+        "buyer_name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "buyer_address": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "vehicle_no": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "driver_name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "transport_mode": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "description": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "total_cartons": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "total_quantity": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "total_weight_kg": {
+          "type": "decimal",
+          "description": ""
+        },
+        "remarks": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "shipment_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "logistics_gatepass": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "gate_pass_no": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "pass_type": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "vehicle_no": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "driver_name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "driver_phone": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "courier_name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "description": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "total_cartons": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "total_quantity": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "remarks": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "security_check": {
+          "type": "bool",
+          "description": ""
+        },
+        "checked_by": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "gate_in_time": {
+          "type": "datetime",
+          "description": ""
+        },
+        "gate_out_time": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "shipment_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "logistics_packinglist": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "carton_no": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "style_description": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "size": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "color": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "quantity": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "gross_weight_kg": {
+          "type": "decimal",
+          "description": ""
+        },
+        "net_weight_kg": {
+          "type": "decimal",
+          "description": ""
+        },
+        "dimensions": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "shipment_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_buyerstrategyprofile": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "lifetime_revenue": {
+          "type": "decimal",
+          "description": ""
+        },
+        "lifetime_cost": {
+          "type": "decimal",
+          "description": ""
+        },
+        "lifetime_profit": {
+          "type": "decimal",
+          "description": ""
+        },
+        "total_orders": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "total_rejection_qty": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "total_rejection_cost": {
+          "type": "decimal",
+          "description": ""
+        },
+        "total_goodwill_qty": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "total_goodwill_cost": {
+          "type": "decimal",
+          "description": ""
+        },
+        "relationship_investment": {
+          "type": "decimal",
+          "description": ""
+        },
+        "return_on_relationship": {
+          "type": "decimal",
+          "description": ""
+        },
+        "health_score": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "last_calculated": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "buyer_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_color": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "code": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "hex_value": {
+          "type": "varchar(7)",
+          "description": ""
+        }
+      }
+    },
+    "orders_costinghistory": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "version": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "changed_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "snapshot": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "reason": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "changed_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "costing_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_leadactivity": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "activity_type": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "subject": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "description": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "activity_date": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "lead_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_orderamendment": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "amendment_number": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "field_changed": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "old_value": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "new_value": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "reason": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "changed_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "ip_address": {
+          "type": "char(39)",
+          "description": ""
+        },
+        "changed_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_ordersizecolorbreakdown": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "quantity": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "color_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "size_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_quotation": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "quotation_number": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "quantity": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "target_price": {
+          "type": "decimal",
+          "description": ""
+        },
+        "offered_price": {
+          "type": "decimal",
+          "description": ""
+        },
+        "currency": {
+          "type": "varchar(5)",
+          "description": ""
+        },
+        "valid_until": {
+          "type": "date",
+          "description": ""
+        },
+        "delivery_date": {
+          "type": "date",
+          "description": ""
+        },
+        "remarks": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "buyer_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "converted_order_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "style_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_size": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "sort_order": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "group_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "orders_sizegroup": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "description": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "is_default": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        }
+      }
+    },
+    "orders_styleversion": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "version_number": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "change_summary": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "document": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "document_url": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "style_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "uploaded_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_auditfinding": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "finding_number": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "category": {
+          "type": "varchar(25)",
+          "description": ""
+        },
+        "severity": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "description": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "clause_reference": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "evidence": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "root_cause": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "corrective_action": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "preventive_action": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "responsible_person": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "target_date": {
+          "type": "date",
+          "description": ""
+        },
+        "closed_date": {
+          "type": "date",
+          "description": ""
+        },
+        "verification_notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "audit_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "verified_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_bundle": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "bundle_number": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "size": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "color": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "quantity": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "current_stage": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "line_no": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "last_scanned_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "cutting_plan_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "last_scanned_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_bundlehistory": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "from_stage": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "to_stage": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "scanned_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "remarks": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "bundle_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "scanned_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_buyerqualitystandard": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "aql_major": {
+          "type": "varchar(5)",
+          "description": ""
+        },
+        "aql_minor": {
+          "type": "varchar(5)",
+          "description": ""
+        },
+        "aql_critical": {
+          "type": "varchar(5)",
+          "description": ""
+        },
+        "inspection_level": {
+          "type": "varchar(3)",
+          "description": ""
+        },
+        "zero_tolerance_critical": {
+          "type": "bool",
+          "description": ""
+        },
+        "measurement_tolerance_plus": {
+          "type": "decimal",
+          "description": ""
+        },
+        "measurement_tolerance_minus": {
+          "type": "decimal",
+          "description": ""
+        },
+        "packaging_standard": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "labeling_requirements": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "testing_requirements": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "special_instructions": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "buyer_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_defectitem": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "defect_name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "severity": {
+          "type": "varchar(10)",
+          "description": ""
+        },
+        "zone": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "count": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "description": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "inspection_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_hourlyproduction": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "line_no": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "date": {
+          "type": "date",
+          "description": ""
+        },
+        "hour": {
+          "type": "smallint unsigned",
+          "description": ""
+        },
+        "output": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "reject": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "operators": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "remarks": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_measurementspec": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "size": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "point_of_measure": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "spec_value": {
+          "type": "decimal",
+          "description": ""
+        },
+        "tolerance_plus": {
+          "type": "decimal",
+          "description": ""
+        },
+        "tolerance_minus": {
+          "type": "decimal",
+          "description": ""
+        },
+        "actual_value": {
+          "type": "decimal",
+          "description": ""
+        },
+        "measured_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "remarks": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "measured_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_operatorperformance": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "operator_name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "operator_id": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "line_no": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "operation": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "date": {
+          "type": "date",
+          "description": ""
+        },
+        "target_pcs": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "achieved_pcs": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "defect_pcs": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "sam_value": {
+          "type": "decimal",
+          "description": ""
+        },
+        "working_minutes": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "remarks": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_stylesam": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "sam_value": {
+          "type": "decimal",
+          "description": ""
+        },
+        "operators_per_line": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "working_minutes_per_day": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "style_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "production_subcontractorder": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "sc_number": {
+          "type": "varchar(50)",
+          "description": ""
+        },
+        "subcontract_type": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "subcontractor_name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "subcontractor_contact": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "quantity": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "unit_cost": {
+          "type": "decimal",
+          "description": ""
+        },
+        "total_cost": {
+          "type": "decimal",
+          "description": ""
+        },
+        "material_cost": {
+          "type": "decimal",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "sent_date": {
+          "type": "date",
+          "description": ""
+        },
+        "expected_return_date": {
+          "type": "date",
+          "description": ""
+        },
+        "actual_return_date": {
+          "type": "date",
+          "description": ""
+        },
+        "received_qty": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "defect_qty": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "notes": {
+          "type": "TEXT",
+          "description": ""
+        },
+        "gl_posted": {
+          "type": "bool",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "order_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "reception_appointment": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "visitor_name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "visitor_org": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "visitor_phone": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "visitor_email": {
+          "type": "varchar(254)",
+          "description": ""
+        },
+        "purpose": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "purpose_detail": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "num_visitors": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "scheduled_date": {
+          "type": "date",
+          "description": ""
+        },
+        "scheduled_time": {
+          "type": "time",
+          "description": ""
+        },
+        "duration_minutes": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "token": {
+          "type": "char(32)",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "notes": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "arrived_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "host_employee_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "meeting_room_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "visitor_pass_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    },
+    "reception_meetingroom": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "name": {
+          "type": "varchar(100)",
+          "description": ""
+        },
+        "room_type": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "location": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "capacity": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "is_active": {
+          "type": "bool",
+          "description": ""
+        }
+      }
+    },
+    "reception_visitorpass": {
+      "description": "",
+      "columns": {
+        "id": {
+          "type": "INTEGER",
+          "description": ""
+        },
+        "visitor_name": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "visitor_org": {
+          "type": "varchar(200)",
+          "description": ""
+        },
+        "visitor_phone": {
+          "type": "varchar(30)",
+          "description": ""
+        },
+        "visitor_email": {
+          "type": "varchar(254)",
+          "description": ""
+        },
+        "purpose": {
+          "type": "varchar(20)",
+          "description": ""
+        },
+        "purpose_detail": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "num_visitors": {
+          "type": "integer unsigned",
+          "description": ""
+        },
+        "status": {
+          "type": "varchar(15)",
+          "description": ""
+        },
+        "room_note": {
+          "type": "varchar(300)",
+          "description": ""
+        },
+        "response_note": {
+          "type": "varchar(500)",
+          "description": ""
+        },
+        "created_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "responded_at": {
+          "type": "datetime",
+          "description": ""
+        },
+        "check_in_time": {
+          "type": "datetime",
+          "description": ""
+        },
+        "check_out_time": {
+          "type": "datetime",
+          "description": ""
+        },
+        "created_by_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "host_employee_id": {
+          "type": "bigint",
+          "description": ""
+        },
+        "meeting_room_id": {
+          "type": "bigint",
+          "description": ""
+        }
+      }
+    }
+  }
+}

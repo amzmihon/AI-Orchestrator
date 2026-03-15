@@ -1,0 +1,2556 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Orchestrator — Intelligence Platform</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] }
+    }
+  }
+}
+</script>
+<style>
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+  ::-webkit-scrollbar-thumb:hover{background:#9ca3af}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes typing{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .animate-fade-in{animation:fadeIn .3s ease}
+  .typing-dot{width:7px;height:7px;border-radius:50%;background:#9ca3af;animation:typing 1.4s infinite}
+  .typing-dot:nth-child(2){animation-delay:.2s}
+  .typing-dot:nth-child(3){animation-delay:.4s}
+  .wa-spin{display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+  .wa-btn-loading .wa-spin{display:inline-block}
+  .wa-btn-loading .wa-lbl{display:none}
+</style>
+</head>
+<body class="h-full font-sans antialiased bg-gray-50 text-gray-900">
+
+<!-- ═══ AUTH OVERLAY ═══ -->
+<div id="authOverlay" class="fixed inset-0 z-[200] bg-gray-50 flex items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
+    <div class="w-14 h-14 rounded-xl bg-indigo-600 flex items-center justify-center mx-auto mb-5">
+      <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    </div>
+    <h2 class="text-xl font-bold text-gray-900 mb-1">AI Orchestrator Platform</h2>
+    <p class="text-sm text-gray-500 mb-6">Paste your JWT or sign in to access the platform</p>
+    <div id="authError" class="hidden bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm mb-4"></div>
+    <input type="text" id="tokenInput" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 mb-3" placeholder="Paste JWT token here…">
+    <button onclick="authWithToken()" class="w-full py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">Connect with Token</button>
+    <div class="flex items-center gap-3 my-4"><div class="flex-1 h-px bg-gray-200"></div><span class="text-xs text-gray-400">or</span><div class="flex-1 h-px bg-gray-200"></div></div>
+    <button onclick="showDirectLogin()" class="text-indigo-600 text-sm font-semibold hover:text-indigo-800">Sign in with username &amp; password</button>
+    <div id="directLogin" class="hidden mt-4 space-y-3">
+      <input type="text" id="directEmail" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Username (e.g. admin)">
+      <input type="password" id="directPassword" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Password">
+      <button onclick="directLoginAction()" class="w-full py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOAST CONTAINER ═══ -->
+<div id="toastWrap" class="fixed top-4 right-4 z-[500] flex flex-col gap-2"></div>
+
+<!-- ═══ MODAL: Create User ═══ -->
+<div id="modalCreateUser" class="fixed inset-0 z-[300] bg-black/40 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-7">
+    <h3 class="text-lg font-bold text-gray-900 mb-5">Create User</h3>
+    <div class="space-y-3 mb-5">
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">Email</label><input id="cuEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">First Name</label><input id="cuFirst" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">Last Name</label><input id="cuLast" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs font-semibold text-gray-500 mb-1">Department</label><input id="cuDept" value="General" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+        <div><label class="block text-xs font-semibold text-gray-500 mb-1">Access Level</label>
+          <select id="cuRole" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"><option>employee</option><option>hr_staff</option><option>hr_manager</option><option>sales_staff</option><option>sales_manager</option><option>finance</option><option>project_manager</option><option>admin</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2">
+      <button onclick="closeModal('modalCreateUser')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+      <button onclick="createUser()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Create API Key ═══ -->
+<div id="modalCreateKey" class="fixed inset-0 z-[300] bg-black/40 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-7">
+    <h3 class="text-lg font-bold text-gray-900 mb-5">Generate API Key</h3>
+    <div class="space-y-3 mb-5">
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">Key Name / Alias</label><input id="ckName" placeholder="e.g. orchestrator-prod" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">Max Budget (USD, optional)</label><input id="ckBudget" type="number" placeholder="100" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+    </div>
+    <div class="flex justify-end gap-2">
+      <button onclick="closeModal('modalCreateKey')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+      <button onclick="createApiKey()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Generate</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Pull Model ═══ -->
+<div id="modalPullModel" class="fixed inset-0 z-[300] bg-black/40 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-7">
+    <h3 class="text-lg font-bold text-gray-900 mb-5">Pull Ollama Model</h3>
+    <div class="mb-3"><label class="block text-xs font-semibold text-gray-500 mb-1">Model Name</label><input id="pmName" placeholder="e.g. qwen3.5:9b" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+    <p class="text-xs text-gray-500 mb-5">This may take several minutes depending on model size.</p>
+    <div class="flex justify-end gap-2">
+      <button onclick="closeModal('modalPullModel')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+      <button id="pullBtn" onclick="pullModel()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Pull Model</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Create Admin User ═══ -->
+<div id="modalCreateAdminUser" class="fixed inset-0 z-[300] bg-black/40 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-7">
+    <h3 class="text-lg font-bold text-gray-900 mb-5">Create Admin User</h3>
+    <div class="space-y-3">
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">Username</label><input id="cauUsername" placeholder="Username" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">Password</label><input id="cauPassword" type="password" placeholder="Password" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">Display Name</label><input id="cauDisplayName" placeholder="Display Name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">Role</label><select id="cauRole" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"><option value="admin">Admin</option><option value="viewer">Viewer</option></select></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-5">
+      <button onclick="closeModal('modalCreateAdminUser')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+      <button onclick="createAdminUser()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Add Skill ═══ -->
+<div id="modalAddSkill" class="fixed inset-0 z-[300] bg-black/40 hidden items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-7">
+    <h3 class="text-lg font-bold text-gray-900 mb-5">Add Skill</h3>
+    <div class="space-y-3">
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">Skill Name</label><input id="skillName" placeholder="e.g. sql_expert" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+      <div><label class="block text-xs font-semibold text-gray-500 mb-1">Skill Content</label><textarea id="skillContent" rows="6" placeholder="Skill system prompt content…" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"></textarea></div>
+    </div>
+    <div class="flex justify-end gap-2 mt-5">
+      <button onclick="closeModal('modalAddSkill')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+      <button onclick="installSkill()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Add Skill</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LAYOUT ═══ -->
+<div class="flex h-full">
+
+<!-- ── SIDEBAR ── -->
+<aside id="sidebar" class="w-64 min-w-[16rem] bg-white border-r border-gray-200 shadow-sm flex flex-col h-screen z-[100]">
+  <!-- Brand -->
+  <div class="px-5 py-4 border-b border-gray-100">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      </div>
+      <div>
+        <div class="text-sm font-bold text-gray-900">AI Orchestrator</div>
+        <div class="text-[10px] text-gray-400 font-medium">Intelligence Platform</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 py-2 overflow-y-auto">
+    <div class="px-4 pt-3 pb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Home</div>
+    <button data-page="home" onclick="navTo('home')" class="nav-item active flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>
+      Dashboard
+    </button>
+
+    <div class="px-4 pt-4 pb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">AI Config</div>
+    <button data-page="connections" onclick="navTo('connections')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+      Connections
+    </button>
+    <button data-page="schema-map" onclick="navTo('schema-map')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+      Schema Map
+    </button>
+    <button data-page="system-prompt" onclick="navTo('system-prompt')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      System Prompt
+    </button>
+    <button data-page="permissions" onclick="navTo('permissions')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      Permissions
+    </button>
+    <button data-page="intent-tuner" onclick="navTo('intent-tuner')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+      Intent Tuner
+    </button>
+
+    <div class="px-4 pt-4 pb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">AI Data</div>
+    <button data-page="ai-memory" onclick="navTo('ai-memory')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+      AI Memory
+    </button>
+    <button data-page="security" onclick="navTo('security')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      Security
+    </button>
+    <button data-page="data-sync" onclick="navTo('data-sync')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      Data Sync
+    </button>
+    <button data-page="chat-sessions" onclick="navTo('chat-sessions')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/></svg>
+      Chat Sessions
+    </button>
+    <button data-page="rag-db" onclick="navTo('rag-db')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+      RAG Database
+    </button>
+
+    <div class="px-4 pt-4 pb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Admin</div>
+    <button data-page="admin-users" onclick="navTo('admin-users')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+      Admin Users
+    </button>
+    <button data-page="log" onclick="navTo('log')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+      Activity Log
+    </button>
+
+    <div class="px-4 pt-4 pb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-between">
+      <span>Tools</span>
+      <button onclick="document.getElementById('toolsNav').classList.toggle('hidden')" class="text-gray-300 hover:text-gray-500 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+    </div>
+    <div id="toolsNav" class="hidden">
+    <button data-page="chat" onclick="navTo('chat')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      AI Chat
+    </button>
+    <button data-page="assist" onclick="navTo('assist')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+      Writing Assistant
+    </button>
+    <button data-page="dashboard" onclick="navTo('dashboard')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      System Health
+    </button>
+    <button data-page="ollama" onclick="navTo('ollama')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      Ollama Engine
+    </button>
+    <button data-page="litellm" onclick="navTo('litellm')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+      LiteLLM Proxy
+    </button>
+    <button data-page="users" onclick="navTo('users')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      ERP Users
+    </button>
+    <button data-page="apikeys" onclick="navTo('apikeys')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+      API Keys
+    </button>
+    <button data-page="settings" onclick="navTo('settings')" class="nav-item flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg mx-1 hover:bg-gray-100 transition-colors" style="width:calc(100% - 8px)">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Settings
+    </button>
+    </div>
+  </nav>
+
+  <!-- User Info -->
+  <div id="sbUser" class="hidden px-4 py-3 border-t border-gray-100">
+    <div class="flex items-center gap-3">
+      <div id="sbAvatar" class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">?</div>
+      <div class="min-w-0">
+        <div id="sbName" class="text-xs font-semibold text-gray-900 truncate">—</div>
+        <div id="sbRole" class="text-[10px] text-gray-400 truncate">—</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN CONTENT ── -->
+<div class="flex-1 flex flex-col overflow-hidden">
+
+<!-- ═══════════════════════════════════════════
+     HOME PAGE — Module Cards Grid
+     ═══════════════════════════════════════════ -->
+<div id="page-home" class="page active flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold text-gray-900">AI Administration</h1>
+      <p class="text-sm text-gray-500 mt-1">Manage and monitor the AI Orchestrator Intelligence Platform</p>
+    </div>
+
+    <!-- Admin Module Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+
+      <!-- 1. Connections -->
+      <button onclick="navTo('connections')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Connections</span>
+          <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">Connections</p>
+        <p class="text-xs text-gray-500">LLM, Database & Auth configuration</p>
+      </button>
+
+      <!-- 2. Schema Map -->
+      <button onclick="navTo('schema-map')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Schema Map</span>
+          <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+            <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">Schema Map</p>
+        <p class="text-xs text-gray-500">Teach AI about your database tables</p>
+      </button>
+
+      <!-- 3. System Prompt -->
+      <button onclick="navTo('system-prompt')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">System Prompt</span>
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">System Prompt</p>
+        <p class="text-xs text-gray-500">AI persona & skills manager</p>
+      </button>
+
+      <!-- 4. Permissions -->
+      <button onclick="navTo('permissions')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Permissions</span>
+          <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 transition-colors">
+            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">AI Permissions</p>
+        <p class="text-xs text-gray-500">Role-to-table access control</p>
+      </button>
+
+      <!-- 5. Intent Tuner -->
+      <button onclick="navTo('intent-tuner')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Intent Tuner</span>
+          <div class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center group-hover:bg-rose-100 transition-colors">
+            <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">Intent Tuner</p>
+        <p class="text-xs text-gray-500">Question routing & classification</p>
+      </button>
+
+      <!-- 6. AI Memory -->
+      <button onclick="navTo('ai-memory')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">AI Memory</span>
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">AI Memory</p>
+        <p class="text-xs text-gray-500">Facts, preferences & episodes</p>
+      </button>
+
+      <!-- 7. Security -->
+      <button onclick="navTo('security')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Security</span>
+          <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center group-hover:bg-red-100 transition-colors">
+            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">Security</p>
+        <p class="text-xs text-gray-500">PII detection & blocked topics</p>
+      </button>
+
+      <!-- 8. Data Sync -->
+      <button onclick="navTo('data-sync')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Data Sync</span>
+          <div class="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center group-hover:bg-teal-100 transition-colors">
+            <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">Data Sync</p>
+        <p class="text-xs text-gray-500">Staging DB freshness & schedule</p>
+      </button>
+
+      <!-- 9. Chat Sessions -->
+      <button onclick="navTo('chat-sessions')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Chat Sessions</span>
+          <div class="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center group-hover:bg-cyan-100 transition-colors">
+            <svg class="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">Chat Sessions</p>
+        <p class="text-xs text-gray-500">All user conversations admin</p>
+      </button>
+
+      <!-- 10. RAG Database -->
+      <button onclick="navTo('rag-db')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">RAG DB</span>
+          <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
+            <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">RAG Database</p>
+        <p class="text-xs text-gray-500">Embeddings, cache & maintenance</p>
+      </button>
+
+      <!-- 11. Admin Users -->
+      <button onclick="navTo('admin-users')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Admin Users</span>
+          <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+            <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">Admin Users</p>
+        <p class="text-xs text-gray-500">Orchestrator user management</p>
+      </button>
+
+      <!-- 12. Activity Log -->
+      <button onclick="navTo('log')" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group text-left">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Log</span>
+          <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+          </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900 mb-1">Activity Log</p>
+        <p class="text-xs text-gray-500">System activity & event log</p>
+      </button>
+
+    </div>
+
+    <!-- Quick Stats Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Orchestrator</div>
+        <div class="text-lg font-bold" id="homeOrchStatus"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>Checking…</div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Data Freshness</div>
+        <div class="text-lg font-bold" id="homeFreshStatus"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>Checking…</div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">LLM Engine</div>
+        <div class="text-lg font-bold" id="homeLLMStatus"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>Checking…</div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Main App</div>
+        <div class="text-lg font-bold" id="homeAppStatus"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>Checking…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAT PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-chat" class="page hidden flex-1 flex flex-col overflow-hidden bg-gray-50">
+  <!-- Chat Header -->
+  <div class="bg-white border-b border-gray-200 px-5 py-3 flex items-center gap-3 shadow-sm flex-shrink-0">
+    <h3 class="text-sm font-bold text-gray-900 flex-1">AI Assistant</h3>
+    <div id="chatFreshness" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 cursor-default" title="Checking data freshness…">
+      <span id="chatFreshDot" class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+      <span id="chatFreshnessLabel">Checking…</span>
+    </div>
+    <span class="inline-flex items-center gap-1.5 text-xs text-gray-500"><span id="connDot" class="w-2 h-2 rounded-full bg-yellow-400"></span><span id="connLabel">—</span></span>
+    <button onclick="toggleChatSidebar()" class="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1.5">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      History
+    </button>
+  </div>
+
+  <!-- Chat Body -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Chat Sidebar -->
+    <div id="chatSidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 transition-all duration-300">
+      <div class="p-2.5 border-b border-gray-100">
+        <button onclick="newChat()" class="w-full py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-1">＋ New Chat</button>
+      </div>
+      <div class="flex border-b border-gray-100">
+        <button data-tab="history" onclick="csTab('history')" class="cs-tab flex-1 py-2 text-center text-[11px] font-semibold text-indigo-600 border-b-2 border-indigo-600">History</button>
+        <button data-tab="memory" onclick="csTab('memory')" class="cs-tab flex-1 py-2 text-center text-[11px] font-semibold text-gray-400 border-b-2 border-transparent hover:text-gray-600">Memory</button>
+      </div>
+      <div id="historyTab" class="flex-1 overflow-y-auto p-1.5"><div class="text-center text-xs text-gray-400 py-8">No conversations yet.</div></div>
+      <div id="memoryTab" class="flex-1 overflow-y-auto p-1.5 hidden"><div class="text-center text-xs text-gray-400 py-8">No memories yet.</div></div>
+      <div id="addMemBar" class="hidden p-1.5 border-t border-gray-100 flex gap-1">
+        <input type="text" id="memInput" placeholder="Add memory…" class="flex-1 px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" onkeydown="if(event.key==='Enter')addMem()">
+        <button onclick="addMem()" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700">Add</button>
+      </div>
+    </div>
+
+    <!-- Chat Main -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <div id="chatArea" class="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3.5">
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="text-center m-auto max-w-lg px-6 py-10">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-indigo-200">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <h2 class="text-xl font-bold text-gray-900 mb-2">What would you like to know?</h2>
+          <p class="text-sm text-gray-500 mb-6">Ask about sales, employees, projects, attendance, and more.</p>
+          <div class="flex flex-wrap gap-2 justify-center">
+            <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">Show me total sales this month</button>
+            <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">Who are the top 5 sales reps?</button>
+            <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">How many employees per department?</button>
+            <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">Pending leave requests</button>
+            <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">Revenue growth last 6 months</button>
+            <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">Active projects by budget</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Bar -->
+      <div class="bg-white border-t border-gray-200 px-4 py-3 flex-shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,.04)]">
+        <div class="flex gap-2 max-w-3xl mx-auto items-end">
+          <textarea id="qInput" placeholder="Ask a question about your company data…" rows="1" class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 resize-none min-h-[44px] max-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button id="sendBtn" onclick="sendQ()" disabled class="w-11 h-11 rounded-lg bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 hover:bg-indigo-700 disabled:opacity-35 disabled:cursor-not-allowed transition-colors">
+            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+          </button>
+          <button id="stopBtn" onclick="stopGen()" class="hidden w-11 h-11 rounded-lg bg-red-500 text-white items-center justify-center flex-shrink-0 hover:bg-red-600 transition-colors" title="Stop generating">
+            <svg class="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DASHBOARD (System Health) PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-dashboard" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">System Dashboard</h2>
+        <p class="text-sm text-gray-500">Monitor service health and data freshness</p>
+      </div>
+      <button onclick="navTo('home')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">← Back</button>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Orchestrator</div><div class="text-lg font-bold" id="dOrch"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>…</div><div class="text-xs text-gray-500 mt-1">AI Text-to-SQL Engine</div></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">LiteLLM Proxy</div><div class="text-lg font-bold" id="dLitellm"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>…</div><div class="text-xs text-gray-500 mt-1">API Gateway</div></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Ollama Engine</div><div class="text-lg font-bold" id="dOllama"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>…</div><div class="text-xs text-gray-500 mt-1">Local LLM Runtime</div></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Main App</div><div class="text-lg font-bold" id="dMainapp"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>…</div><div class="text-xs text-gray-500 mt-1">Business Portal</div></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Data Freshness</div><div class="text-lg font-bold" id="dFreshVal">Checking…</div><div class="text-xs text-gray-500 mt-1" id="dFreshSub">Staging DB sync status</div></div>
+    </div>
+
+    <!-- Freshness Details -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm flex items-center gap-2">
+        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Data Freshness Details
+      </div>
+      <div class="px-5 py-4" id="freshnessDetails"><p class="text-sm text-gray-400">Loading…</p></div>
+    </div>
+
+    <!-- Quick LLM Test -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm flex items-center gap-2">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        Quick LLM Test
+      </div>
+      <div class="px-5 py-4 flex gap-2 items-end">
+        <input id="testPrompt" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter a test prompt… e.g. What is 2+2?">
+        <button onclick="testLLM()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Send</button>
+      </div>
+      <div id="testResult" class="hidden px-5 pb-4 text-sm"></div>
+    </div>
+
+    <!-- Service Details -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm flex items-center gap-2">
+        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+        Service Details
+      </div>
+      <div class="px-5 py-4 divide-y divide-gray-100" id="serviceDetails">
+        <div class="flex items-center justify-between py-2.5 text-sm"><span class="flex items-center gap-2"><span id="sdOrch" class="w-2 h-2 rounded-full bg-yellow-400"></span>Orchestrator</span><span class="text-gray-400 font-mono text-xs">:7001</span></div>
+        <div class="flex items-center justify-between py-2.5 text-sm"><span class="flex items-center gap-2"><span id="sdLitellm" class="w-2 h-2 rounded-full bg-yellow-400"></span>LiteLLM Proxy</span><span class="text-gray-400 font-mono text-xs">:7002</span></div>
+        <div class="flex items-center justify-between py-2.5 text-sm"><span class="flex items-center gap-2"><span id="sdOllama" class="w-2 h-2 rounded-full bg-yellow-400"></span>Ollama Engine</span><span class="text-gray-400 font-mono text-xs">:11434</span></div>
+        <div class="flex items-center justify-between py-2.5 text-sm"><span class="flex items-center gap-2"><span id="sdMainapp" class="w-2 h-2 rounded-full bg-yellow-400"></span>Main App</span><span class="text-gray-400 font-mono text-xs">:7000</span></div>
+        <div class="flex items-center justify-between py-2.5 text-sm"><span class="flex items-center gap-2"><span id="sdDb" class="w-2 h-2 rounded-full bg-yellow-400"></span>Staging Database</span><span class="text-gray-400 font-mono text-xs">:5433</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     OLLAMA PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-ollama" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">Ollama Engine</h2><p class="text-sm text-gray-500">Manage local LLM models</p></div>
+      <button onclick="navTo('home')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">← Back</button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Status</div><div class="text-lg font-bold" id="ollamaStatus"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>…</div></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Installed Models</div><div class="text-2xl font-bold" id="ollamaCount">—</div></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Running Models</div><div class="text-2xl font-bold" id="ollamaRunning">—</div></div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm flex items-center justify-between">
+        <span>Installed Models</span>
+        <button onclick="openModal('modalPullModel')" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">＋ Pull Model</button>
+      </div>
+      <div class="px-5 py-4" id="ollamaModelList"><p class="text-sm text-gray-400">Loading…</p></div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm">Currently Running</div>
+      <div class="px-5 py-4" id="ollamaRunList"><p class="text-sm text-gray-400">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     LITELLM PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-litellm" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">LiteLLM Proxy</h2><p class="text-sm text-gray-500">API gateway and model routing</p></div>
+      <button onclick="navTo('home')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">← Back</button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Status</div><div class="text-lg font-bold" id="litellmStatus"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>…</div></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Models Available</div><div class="text-2xl font-bold" id="litellmModels">—</div></div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm">Configured Models</div>
+      <div class="px-5 py-4" id="litellmModelList"><p class="text-sm text-gray-400">Loading…</p></div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm">Connection Info</div>
+      <div class="px-5 py-4 divide-y divide-gray-100">
+        <div class="flex items-center justify-between py-2.5 text-sm"><span>Endpoint</span><span class="text-gray-400 font-mono text-xs" id="litellmEndpoint">—</span></div>
+        <div class="flex items-center justify-between py-2.5 text-sm"><span>Master Key</span><span class="text-gray-400 font-mono text-xs">sk-master-key-***</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     USERS PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-users" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">User Management</h2><p class="text-sm text-gray-500">Manage platform users and access levels</p></div>
+      <button onclick="navTo('home')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">← Back</button>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <span class="font-semibold text-sm">All Users</span>
+        <div class="flex items-center gap-2">
+          <input id="userSearch" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search…" oninput="filterUsers()">
+          <button onclick="openModal('modalCreateUser')" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">＋ Create User</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50"><tr>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">ID</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr></thead>
+          <tbody id="usersBody" class="divide-y divide-gray-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     API KEYS PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-apikeys" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">API Key Management</h2><p class="text-sm text-gray-500">Generate and manage LiteLLM API keys</p></div>
+      <button onclick="navTo('home')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">← Back</button>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <span class="font-semibold text-sm">LiteLLM API Keys</span>
+        <button onclick="openModal('modalCreateKey')" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">＋ Generate Key</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50"><tr>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Key</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Spend</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Max Budget</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Created</th>
+            <th class="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr></thead>
+          <tbody id="keysBody" class="divide-y divide-gray-100"></tbody>
+        </table>
+      </div>
+      <div id="keysEmpty" class="py-8 text-center text-sm text-gray-400">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SETTINGS PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-settings" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">Settings</h2><p class="text-sm text-gray-500">Service configuration and architecture</p></div>
+      <button onclick="navTo('home')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">← Back</button>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm">Service Configuration</div>
+      <div class="px-5 py-4 divide-y divide-gray-100" id="settingsConfig"><p class="text-sm text-gray-400">Loading…</p></div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm">Architecture</div>
+      <div class="px-5 py-4 text-xs font-mono whitespace-pre overflow-x-auto leading-relaxed text-gray-500">
+┌──────────────────────────────────────────────────────┐
+│              Docker Network (atl-network)             │
+│                                                       │
+│  ┌──────────┐  ┌───────────┐  ┌──────────┐           │
+│  │ Main App │  │Orchestrator│  │ LiteLLM  │           │
+│  │  :7000   │  │   :7001   │  │  :7002   │           │
+│  └────┬─────┘  └─────┬─────┘  └────┬─────┘           │
+│       │              │              │                 │
+│  ┌────┴──────────────┴──────────────┘                 │
+│  │  ┌──────────────────┐                              │
+│  │  │ PostgreSQL :5432 │  (staging + litellm)         │
+│  │  └──────────────────┘                              │
+│  └────────────────────────────────────────────────────│
+│  ┌──────────────────┐  (Host)                         │
+│  │  Ollama :11434   │  ← host.docker.internal         │
+│  └──────────────────┘                                 │
+└───────────────────────────────────────────────────────┘</div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm">About</div>
+      <div class="px-5 py-4 text-sm text-gray-500">
+        <p><strong class="text-gray-900">AI Orchestrator Intelligence Platform</strong> — Private AI-Powered Corporate Ecosystem</p>
+        <p class="mt-1">All dashboards and monitoring consolidated into the Orchestrator. Version 2.0</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     WRITING ASSISTANT PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-assist" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-4xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">AI Writing Assistant</h2>
+        <p class="text-sm text-gray-500">Transform drafts into polished corporate communication</p>
+      </div>
+      <button onclick="navTo('home')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">← Back</button>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <!-- Header -->
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-gray-900">Smart Text Assistant</h3>
+          <p class="text-xs text-gray-400">Context-aware rewriting &amp; completion</p>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="p-5 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Field Label</label>
+            <input type="text" id="owaFieldLabel" value="Notes" placeholder="e.g. Project Description, Leave Reason, Notes…" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Tone</label>
+              <select id="owaTone" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="professional" selected>Professional</option>
+                <option value="formal">Formal</option>
+                <option value="friendly">Friendly</option>
+                <option value="concise">Concise</option>
+                <option value="executive">Executive</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">App Section</label>
+              <input type="text" id="owaSection" value="Admin Panel" placeholder="e.g. HR Leave Form" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Your Text</label>
+          <textarea id="owaInput" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y min-h-[100px]" placeholder="Type or paste your draft text here…&#10;&#10;Examples:&#10;• 'need 3 days off next week family stuff'&#10;• 'proj behind schedule cause vendor delayed shipment'&#10;• 'quarterly sales were good we beat targets'"></textarea>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button id="owaBtn" onclick="owaAssist()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 shadow-md shadow-indigo-200 transition-all">
+            <span class="wa-lbl">AI Assist</span>
+            <span class="wa-spin"></span>
+          </button>
+          <button id="owaStopBtn" onclick="owaStopGen()" class="hidden inline-flex items-center gap-1 px-5 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600">Stop</button>
+          <span id="owaStat" class="text-xs text-gray-400"></span>
+        </div>
+
+        <!-- Result -->
+        <div id="owaResult" class="hidden bg-gray-50 border border-gray-200 rounded-xl overflow-hidden animate-fade-in">
+          <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between text-xs font-semibold text-gray-500">
+            <span>AI Suggestion</span>
+            <span id="owaBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-indigo-100 text-indigo-600">REWRITE</span>
+          </div>
+          <div id="owaBody" class="px-4 py-3 text-sm leading-relaxed text-gray-800 whitespace-pre-wrap max-h-56 overflow-y-auto"></div>
+          <div class="px-4 py-3 border-t border-gray-200 flex items-center gap-2 flex-wrap">
+            <button onclick="owaReplace()" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">Replace</button>
+            <button onclick="owaAppend()" class="px-3 py-1.5 bg-white border border-gray-300 text-xs font-medium text-gray-700 rounded-lg hover:bg-gray-50">Add to Bottom</button>
+            <button onclick="owaCopy()" class="px-3 py-1.5 bg-white border border-gray-300 text-xs font-medium text-gray-700 rounded-lg hover:bg-gray-50">Copy</button>
+          </div>
+          <div id="owaMeta" class="px-4 py-2 border-t border-gray-200 text-[10px] text-gray-400 flex gap-3 flex-wrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CONNECTIONS PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-connections" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">Connections</h2><p class="text-sm text-gray-500">LLM, Database & Auth configuration</p></div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- LLM Connection -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span>LLM Provider</h3>
+        <div id="connLlm"><p class="text-sm text-gray-400">Loading…</p></div>
+      </div>
+      <!-- Database Connection -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Database</h3>
+        <div id="connDb"><p class="text-sm text-gray-400">Loading…</p></div>
+      </div>
+      <!-- Auth Connection -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-500"></span>Authentication</h3>
+        <div id="connAuth"><p class="text-sm text-gray-400">Loading…</p></div>
+      </div>
+    </div>
+    <!-- Connection List -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mt-6 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-gray-900">All Connections</h3>
+      </div>
+      <div id="connList" class="p-6"><p class="text-sm text-gray-400">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCHEMA MAP PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-schema-map" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">Schema Map</h2><p class="text-sm text-gray-500">Teach AI about your database tables and columns</p></div>
+      <button onclick="aiDescribeAll()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">AI Describe All</button>
+    </div>
+    <div class="flex gap-6">
+      <!-- Table List -->
+      <div class="w-72 flex-shrink-0">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div class="px-4 py-3 border-b border-gray-100"><input type="text" id="schemaSearch" oninput="filterSchemaList()" placeholder="Search tables…" class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></div>
+          <div id="schemaTableList" class="max-h-[600px] overflow-y-auto divide-y divide-gray-50"><p class="text-sm text-gray-400 p-4">Loading…</p></div>
+        </div>
+      </div>
+      <!-- Table Detail -->
+      <div class="flex-1">
+        <div id="schemaDetail" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <p class="text-sm text-gray-400">Select a table to view details</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SYSTEM PROMPT PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-system-prompt" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">System Prompt</h2><p class="text-sm text-gray-500">AI persona and behavior configuration</p></div>
+      <button onclick="saveSystemPrompt()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Save Prompt</button>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+      <label class="text-sm font-semibold text-gray-700 mb-2 block">System Prompt</label>
+      <textarea id="sysPromptEditor" rows="12" class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-y" placeholder="Loading…"></textarea>
+    </div>
+    <!-- Skills Section -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-gray-900">Skills</h3>
+        <button onclick="openModal('modalAddSkill')" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">Add Skill</button>
+      </div>
+      <div id="skillsList" class="p-6"><p class="text-sm text-gray-400">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PERMISSIONS PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-permissions" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">AI Permissions</h2><p class="text-sm text-gray-500">Role-based table access control matrix</p></div>
+    </div>
+    <div id="rbacContent" class="space-y-4"><p class="text-sm text-gray-400">Loading…</p></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     INTENT TUNER PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-intent-tuner" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">Intent Tuner</h2><p class="text-sm text-gray-500">Question routing and classification patterns</p></div>
+    </div>
+    <!-- Test Classifier -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+      <h3 class="text-sm font-bold text-gray-900 mb-3">Test Classifier</h3>
+      <div class="flex gap-3">
+        <input type="text" id="intentTestInput" placeholder="Type a question to test classification…" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        <button onclick="testIntent()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Test</button>
+      </div>
+      <div id="intentTestResult" class="hidden mt-3 p-3 bg-gray-50 rounded-lg text-sm"></div>
+    </div>
+    <!-- Intent Patterns -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h3 class="text-sm font-bold text-gray-900">Intent Patterns</h3>
+      </div>
+      <div id="intentList" class="p-6"><p class="text-sm text-gray-400">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     AI MEMORY PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-ai-memory" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">AI Memory</h2><p class="text-sm text-gray-500">User facts, preferences & episodic memory</p></div>
+    </div>
+    <!-- Filters -->
+    <div class="flex gap-3 mb-4">
+      <input type="text" id="memAdminFilter" placeholder="Filter by user ID…" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-64">
+      <button onclick="loadAdminMemories()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Load</button>
+      <button onclick="loadEpisodicMemories()" class="px-4 py-2 bg-white border border-gray-300 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50">Episodic</button>
+    </div>
+    <!-- Memory Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50"><tr>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">User</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Category</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Content</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Importance</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Actions</th>
+          </tr></thead>
+          <tbody id="adminMemBody" class="divide-y divide-gray-100"><tr><td colspan="5" class="px-4 py-8 text-center text-sm text-gray-400">Click Load to view memories</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Episodic Panel -->
+    <div id="episodicPanel" class="hidden mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100"><h3 class="text-sm font-bold text-gray-900">Episodic Memories</h3></div>
+      <div id="episodicList" class="p-6"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SECURITY PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-security" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">Security</h2><p class="text-sm text-gray-500">PII detection and blocked topics configuration</p></div>
+      <button onclick="savePiiConfig()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Save Config</button>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- PII Config -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-sm font-bold text-gray-900 mb-4">PII Detection</h3>
+        <div id="piiConfig"><p class="text-sm text-gray-400">Loading…</p></div>
+      </div>
+      <!-- Blocked Topics -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-sm font-bold text-gray-900 mb-4">Blocked Topics</h3>
+        <div class="flex gap-2 mb-4">
+          <input type="text" id="blockedTopicName" placeholder="Topic name…" class="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          <input type="text" id="blockedTopicInput" placeholder="Regex pattern…" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          <button onclick="addBlockedTopic()" class="px-3 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700">Block</button>
+        </div>
+        <div id="blockedTopicsList"></div>
+      </div>
+    </div>
+    <!-- PII Test -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
+      <h3 class="text-sm font-bold text-gray-900 mb-3">Test PII Detection</h3>
+      <div class="flex gap-3">
+        <input type="text" id="piiTestInput" placeholder="Enter text to test for PII…" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        <button onclick="testPiiDetection()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Test</button>
+      </div>
+      <div id="piiTestResult" class="hidden mt-3 p-3 bg-gray-50 rounded-lg text-sm"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DATA SYNC PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-data-sync" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">Data Sync</h2><p class="text-sm text-gray-500">Staging database freshness and sync schedule</p></div>
+      <button onclick="forceSync()" id="forceSyncBtn" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Force Sync</button>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <!-- Freshness Status -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-sm font-bold text-gray-900 mb-4">Freshness Status</h3>
+        <div id="syncFreshness"><p class="text-sm text-gray-400">Loading…</p></div>
+      </div>
+      <!-- Schedule -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-sm font-bold text-gray-900 mb-4">Sync Schedule</h3>
+        <div id="syncSchedule"><p class="text-sm text-gray-400">Loading…</p></div>
+      </div>
+    </div>
+    <!-- Sync Log -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100"><h3 class="text-sm font-bold text-gray-900">Sync Log</h3></div>
+      <div id="syncLog" class="p-6 max-h-96 overflow-y-auto"><p class="text-sm text-gray-400">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAT SESSIONS PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-chat-sessions" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">Chat Sessions</h2><p class="text-sm text-gray-500">All user conversations across the platform</p></div>
+    </div>
+    <div class="flex gap-3 mb-4">
+      <input type="text" id="sessAdminFilter" placeholder="Filter by user ID…" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-64">
+      <button onclick="loadAllSessions()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Search</button>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50"><tr>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Session ID</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">User</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Title</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Messages</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Updated</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Actions</th>
+          </tr></thead>
+          <tbody id="adminSessBody" class="divide-y divide-gray-100"><tr><td colspan="6" class="px-4 py-8 text-center text-sm text-gray-400">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Session Detail -->
+    <div id="sessDetailPanel" class="hidden mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-gray-900">Session Messages</h3>
+        <button onclick="document.getElementById('sessDetailPanel').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-sm">Close</button>
+      </div>
+      <div id="sessDetailContent" class="p-6 max-h-96 overflow-y-auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     RAG DATABASE PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-rag-db" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">RAG Database</h2><p class="text-sm text-gray-500">Embeddings, cache and database maintenance</p></div>
+      <button onclick="vacuumRag()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Vacuum DB</button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="ragStats">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">DB Size</div><div class="text-lg font-bold" id="ragSize">—</div></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Memories</div><div class="text-lg font-bold" id="ragMemCount">—</div></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Episodes</div><div class="text-lg font-bold" id="ragEpiCount">—</div></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Messages</div><div class="text-lg font-bold" id="ragMsgCount">—</div></div>
+    </div>
+    <!-- Table Management -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <h3 class="text-sm font-bold text-gray-900 mb-4">Table Management</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="ragTables">
+        <div class="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+          <div><div class="font-semibold text-sm">memories</div><div class="text-xs text-gray-400">User facts & preferences</div></div>
+          <button onclick="clearRagTable('memories')" class="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600">Clear</button>
+        </div>
+        <div class="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+          <div><div class="font-semibold text-sm">episodes</div><div class="text-xs text-gray-400">Conversation episodes</div></div>
+          <button onclick="clearRagTable('episodes')" class="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600">Clear</button>
+        </div>
+        <div class="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+          <div><div class="font-semibold text-sm">messages</div><div class="text-xs text-gray-400">Chat history messages</div></div>
+          <button onclick="clearRagTable('messages')" class="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ADMIN USERS PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-admin-users" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">Admin Users</h2><p class="text-sm text-gray-500">Orchestrator admin user management</p></div>
+      <button onclick="openModal('modalCreateAdminUser')" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Create User</button>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50"><tr>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">ID</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Username</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Display Name</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Role</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Status</th>
+            <th class="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Actions</th>
+          </tr></thead>
+          <tbody id="adminUsersBody" class="divide-y divide-gray-100"><tr><td colspan="6" class="px-4 py-8 text-center text-sm text-gray-400">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ACTIVITY LOG PAGE
+     ═══════════════════════════════════════════ -->
+<div id="page-log" class="page hidden flex-1 overflow-y-auto bg-gray-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold text-gray-900">Activity Log</h2><p class="text-sm text-gray-500">System activity and event log</p></div>
+      <div class="flex gap-2">
+        <select id="logLevelFilter" onchange="loadLogs()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          <option value="">All Levels</option>
+          <option value="INFO">INFO</option>
+          <option value="WARNING">WARNING</option>
+          <option value="ERROR">ERROR</option>
+          <option value="DEBUG">DEBUG</option>
+        </select>
+        <button onclick="loadLogs()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Refresh</button>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div id="logContent" class="p-4 font-mono text-xs leading-relaxed max-h-[600px] overflow-y-auto bg-gray-900 text-gray-300"><p class="text-gray-500">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main content -->
+</div><!-- /layout -->
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT — ALL FUNCTIONALITY PRESERVED
+     ═══════════════════════════════════════════ -->
+<script>
+const ORCH = window.location.origin;
+const MAIN = window.location.origin.replace(/:\d+$/, ':7000');
+let token=null, user=null, isLoading=false;
+let currentSessionId=null, sessions=[], memories=[];
+let allUsersData=[];
+
+/* ── Toast ── */
+function toast(msg, type='info') {
+  const w = document.getElementById('toastWrap');
+  const colors = { success: 'bg-emerald-500', error: 'bg-red-500', info: 'bg-indigo-500' };
+  const t = document.createElement('div');
+  t.className = `${colors[type]||colors.info} text-white px-4 py-2.5 rounded-lg text-sm shadow-lg animate-fade-in min-w-[200px]`;
+  t.textContent = msg;
+  w.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+/* ── Modal ── */
+function openModal(id) { const m = document.getElementById(id); m.classList.remove('hidden'); m.classList.add('flex'); }
+function closeModal(id) { const m = document.getElementById(id); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+/* ── Nav ── */
+function navTo(page) {
+  document.querySelectorAll('.nav-item').forEach(n => {
+    const isActive = n.dataset.page === page;
+    n.classList.toggle('bg-indigo-50', isActive);
+    n.classList.toggle('text-indigo-700', isActive);
+    n.classList.toggle('font-semibold', isActive);
+    n.classList.toggle('text-gray-700', !isActive);
+    if (isActive) n.classList.remove('hover:bg-gray-100');
+    else n.classList.add('hover:bg-gray-100');
+    // Update icon color
+    const icon = n.querySelector('svg');
+    if (icon) { icon.classList.toggle('text-indigo-500', isActive); icon.classList.toggle('text-gray-400', !isActive); }
+  });
+  document.querySelectorAll('.page').forEach(p => {
+    const show = p.id === 'page-' + page;
+    p.classList.toggle('hidden', !show);
+    p.classList.toggle('active', show);
+    if (show && p.id === 'page-chat') { p.classList.add('flex'); } else if (p.id === 'page-chat') { p.classList.remove('flex'); }
+  });
+  if (page === 'home') loadHomeStats();
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'ollama') loadOllama();
+  if (page === 'litellm') loadLitellm();
+  if (page === 'users') loadUsers();
+  if (page === 'apikeys') loadKeys();
+  if (page === 'settings') loadSettings();
+  if (page === 'connections') loadConnections();
+  if (page === 'schema-map') loadSchema();
+  if (page === 'system-prompt') loadSystemPrompt();
+  if (page === 'permissions') loadRbac();
+  if (page === 'intent-tuner') loadIntents();
+  if (page === 'ai-memory') loadAdminMemories();
+  if (page === 'security') loadSecurityPage();
+  if (page === 'data-sync') loadSyncStatus();
+  if (page === 'chat-sessions') loadAllSessions();
+  if (page === 'rag-db') loadRagStatus();
+  if (page === 'admin-users') loadAdminUsers();
+  if (page === 'log') loadLogs();
+}
+
+/* ══════════════════════════════════════════
+   AUTH
+   ══════════════════════════════════════════ */
+function init() {
+  const p = new URLSearchParams(window.location.search);
+  const t = p.get('token');
+  if (t) { token = t; window.history.replaceState({}, '', window.location.pathname); verifyAndConnect(); return; }
+  const s = localStorage.getItem('ai_token');
+  if (s) { token = s; verifyAndConnect(); return; }
+  document.getElementById('authOverlay').classList.remove('hidden');
+}
+
+async function authWithToken() {
+  const t = document.getElementById('tokenInput').value.trim();
+  if (!t) return;
+  token = t;
+  await verifyAndConnect();
+}
+
+function showDirectLogin() { document.getElementById('directLogin').classList.remove('hidden'); }
+
+async function directLoginAction() {
+  const uname = document.getElementById('directEmail').value.trim();
+  const pw = document.getElementById('directPassword').value;
+  const e = document.getElementById('authError');
+  e.classList.add('hidden');
+  try {
+    const r = await fetch(`${ORCH}/api/admin/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: uname, password: pw }) });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.detail || 'Login failed'); }
+    const d = await r.json();
+    token = d.access_token; user = d.user; user.first_name = user.display_name || user.username;
+    localStorage.setItem('ai_token', token);
+    onAuth();
+  } catch (x) { e.textContent = x.message; e.classList.remove('hidden'); }
+}
+
+async function verifyAndConnect() {
+  const e = document.getElementById('authError');
+  e.classList.add('hidden');
+  try { const r = await fetch(`${ORCH}/api/admin/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } }); if (r.ok) { user = await r.json(); user.first_name = user.display_name || user.username; localStorage.setItem('ai_token', token); onAuth(); return; } } catch {}
+  try { const r = await fetch(`${MAIN}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } }); if (r.ok) { user = await r.json(); localStorage.setItem('ai_token', token); onAuth(); return; } } catch {}
+  localStorage.setItem('ai_token', token);
+  user = { first_name: 'User', role: 'unknown', department: '—' };
+  onAuth();
+}
+
+function onAuth() {
+  document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('sbUser').classList.remove('hidden');
+  document.getElementById('sbAvatar').textContent = (user.first_name || '?')[0].toUpperCase();
+  document.getElementById('sbName').textContent = user.first_name + (user.last_name ? ` ${user.last_name}` : '');
+  document.getElementById('sbRole').textContent = `${user.job_title || user.role} · ${user.department}`;
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('qInput').focus();
+  checkOrch(); loadSessions(); loadMemories(); startFreshnessPolling(); loadHomeStats();
+}
+
+/* ══════════════════════════════════════════
+   HOME PAGE STATS
+   ══════════════════════════════════════════ */
+async function loadHomeStats() {
+  try {
+    const r = await fetch(`${ORCH}/api/health`, { signal: AbortSignal.timeout(3000) });
+    const d = await r.json();
+    const ok = d.status === 'healthy';
+    document.getElementById('homeOrchStatus').innerHTML = `<span class="inline-block w-2 h-2 rounded-full ${ok ? 'bg-emerald-500' : 'bg-yellow-400'} mr-2"></span>${ok ? 'Healthy' : 'Degraded'}`;
+  } catch { document.getElementById('homeOrchStatus').innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>Offline'; }
+
+  try {
+    const r = await fetch(`${ORCH}/api/admin/services`);
+    const d = await r.json();
+    const llm = d.ollama?.healthy || d.litellm?.healthy;
+    document.getElementById('homeLLMStatus').innerHTML = `<span class="inline-block w-2 h-2 rounded-full ${llm ? 'bg-emerald-500' : 'bg-red-500'} mr-2"></span>${llm ? 'Online' : 'Offline'}`;
+    document.getElementById('homeAppStatus').innerHTML = `<span class="inline-block w-2 h-2 rounded-full ${d.main_app?.healthy ? 'bg-emerald-500' : 'bg-red-500'} mr-2"></span>${d.main_app?.healthy ? 'Online' : 'Offline'}`;
+  } catch {}
+}
+
+/* ══════════════════════════════════════════
+   CHAT
+   ══════════════════════════════════════════ */
+async function checkOrch() {
+  try { const r = await fetch(`${ORCH}/api/health`, { signal: AbortSignal.timeout(3000) }); if (r.ok) setConn('green', 'Connected'); else setConn('yellow', 'Degraded'); } catch { setConn('red', 'Offline'); }
+}
+function setConn(c, l) {
+  const colors = { green: 'bg-emerald-500', red: 'bg-red-500', yellow: 'bg-yellow-400' };
+  document.getElementById('connDot').className = `w-2 h-2 rounded-full ${colors[c]}`;
+  document.getElementById('connLabel').textContent = l;
+}
+
+function toggleChatSidebar() {
+  const sb = document.getElementById('chatSidebar');
+  if (sb.classList.contains('-ml-64')) { sb.classList.remove('-ml-64'); } else { sb.classList.add('-ml-64'); }
+}
+
+function csTab(tab) {
+  document.querySelectorAll('.cs-tab').forEach(t => {
+    const active = t.dataset.tab === tab;
+    t.classList.toggle('text-indigo-600', active);
+    t.classList.toggle('border-indigo-600', active);
+    t.classList.toggle('text-gray-400', !active);
+    t.classList.toggle('border-transparent', !active);
+  });
+  document.getElementById('historyTab').classList.toggle('hidden', tab !== 'history');
+  document.getElementById('memoryTab').classList.toggle('hidden', tab !== 'memory');
+  const bar = document.getElementById('addMemBar');
+  if (tab === 'memory') { bar.classList.remove('hidden'); bar.classList.add('flex'); } else { bar.classList.add('hidden'); bar.classList.remove('flex'); }
+}
+
+async function loadSessions() {
+  try { const r = await fetch(`${ORCH}/api/sessions`, { headers: { 'Authorization': `Bearer ${token}` } }); if (r.ok) { sessions = await r.json(); renderSessions(); } } catch {}
+}
+function renderSessions() {
+  const c = document.getElementById('historyTab');
+  if (!sessions.length) { c.innerHTML = '<div class="text-center text-xs text-gray-400 py-8">No conversations yet.</div>'; return; }
+  c.innerHTML = sessions.map(s => `<div class="flex items-center justify-between px-2.5 py-2 rounded-lg cursor-pointer text-xs mb-0.5 group hover:bg-gray-50 ${s.id === currentSessionId ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}" onclick="openSession('${s.id}')"><div class="truncate flex-1 font-medium" title="${esc(s.title)}">${esc(s.title)}</div><span class="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded-full text-gray-500 ml-1.5">${s.message_count}</span><span class="text-[10px] text-gray-400 ml-1.5 group-hover:hidden">${fmtAge(s.updated_at)}</span><button class="hidden group-hover:block text-red-400 hover:text-red-600 ml-1 text-sm" onclick="event.stopPropagation();delSession('${s.id}')">✕</button></div>`).join('');
+}
+function fmtAge(iso) { const d = (Date.now() - new Date(iso)) / 1000; if (d < 60) return 'now'; if (d < 3600) return Math.floor(d / 60) + 'm'; if (d < 86400) return Math.floor(d / 3600) + 'h'; if (d < 604800) return Math.floor(d / 86400) + 'd'; return new Date(iso).toLocaleDateString('en', { month: 'short', day: 'numeric' }); }
+
+function newChat() { currentSessionId = null; clearChat(); showWelcome(); renderSessions(); document.getElementById('qInput').focus(); }
+async function openSession(id) {
+  currentSessionId = id; clearChat(); renderSessions();
+  try {
+    const r = await fetch(`${ORCH}/api/sessions/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!r.ok) return; const d = await r.json();
+    d.messages.forEach(m => { if (m.role === 'user') addBubble('user', m.content); else if (m.role === 'assistant') { let pd = null; try { if (m.data_summary) pd = JSON.parse(m.data_summary); } catch {} addBubble('assistant', m.content, m.sql, pd, m.intent ? { intent: m.intent } : null); } });
+    scrollChat();
+  } catch {}
+}
+async function delSession(id) {
+  try { await fetch(`${ORCH}/api/sessions/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); } catch {}
+  if (id === currentSessionId) { currentSessionId = null; clearChat(); showWelcome(); }
+  await loadSessions();
+}
+function clearChat() { document.getElementById('chatArea').innerHTML = ''; }
+function showWelcome() {
+  document.getElementById('chatArea').innerHTML = `<div id="welcomeScreen" class="text-center m-auto max-w-lg px-6 py-10">
+    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-indigo-200">
+      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    </div>
+    <h2 class="text-xl font-bold text-gray-900 mb-2">What would you like to know?</h2>
+    <p class="text-sm text-gray-500 mb-6">Ask about sales, employees, projects, attendance, and more.</p>
+    <div class="flex flex-wrap gap-2 justify-center">
+      <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">Show me total sales this month</button>
+      <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">Who are the top 5 sales reps?</button>
+      <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">How many employees per department?</button>
+      <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">Pending leave requests</button>
+      <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">Revenue growth last 6 months</button>
+      <button onclick="askQ(this.textContent)" class="px-3.5 py-2 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">Active projects by budget</button>
+    </div>
+  </div>`;
+}
+
+/* Memory */
+async function loadMemories() { try { const r = await fetch(`${ORCH}/api/memory`, { headers: { 'Authorization': `Bearer ${token}` } }); if (r.ok) { memories = await r.json(); renderMem(); } } catch {} }
+function renderMem() {
+  const c = document.getElementById('memoryTab');
+  if (!memories.length) { c.innerHTML = '<div class="text-center text-xs text-gray-400 py-8">No memories yet.</div>'; return; }
+  const cl = { preference: 'text-purple-600', fact: 'text-emerald-600', context: 'text-blue-600', instruction: 'text-amber-600' };
+  c.innerHTML = memories.map(m => `<div class="p-2.5 rounded-lg mb-1 bg-gray-50 border border-gray-100 text-xs">
+    <div class="text-[9px] uppercase tracking-wider font-bold ${cl[m.category] || 'text-indigo-600'} mb-1">${m.category} ${m.source === 'auto' ? '(auto)' : '(manual)'}</div>
+    <div class="text-gray-800 leading-relaxed">${esc(m.content)}</div>
+    <div class="flex justify-between mt-1.5"><span class="text-[9px] text-gray-400">Used ${m.access_count}× · ${(m.importance * 100).toFixed(0)}%</span><button onclick="delMem('${m.id}')" class="text-[10px] text-red-400 hover:text-red-600">Delete</button></div>
+  </div>`).join('');
+}
+async function addMem() { const i = document.getElementById('memInput'), v = i.value.trim(); if (!v) return; try { await fetch(`${ORCH}/api/memory`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: v, category: 'preference' }) }); i.value = ''; await loadMemories(); } catch {} }
+async function delMem(id) { try { await fetch(`${ORCH}/api/memory/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); await loadMemories(); } catch {} }
+
+/* Send */
+function askQ(t) { document.getElementById('qInput').value = t; sendQ(); }
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQ(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+
+let abortCtrl = null;
+
+async function sendQ() {
+  const inp = document.getElementById('qInput'), q = inp.value.trim();
+  if (!q || isLoading) return;
+  document.getElementById('welcomeScreen')?.remove();
+  addBubble('user', q); inp.value = ''; inp.style.height = 'auto';
+  isLoading = true;
+  document.getElementById('sendBtn').classList.add('hidden');
+  document.getElementById('stopBtn').classList.remove('hidden');
+  document.getElementById('stopBtn').classList.add('flex');
+  const ty = addTyping();
+  abortCtrl = new AbortController();
+  try {
+    const body = { question: q }; if (currentSessionId) body.session_id = currentSessionId;
+    const r = await fetch(`${ORCH}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body), signal: abortCtrl.signal });
+    ty.remove();
+    if (!r.ok) { const e = await r.json().catch(() => ({ detail: 'Request failed' })); addBubble('assistant', `Error: ${e.detail || r.statusText}`); return; }
+    const d = await r.json();
+    if (d.metadata?.session_id) currentSessionId = d.metadata.session_id;
+    addBubble('assistant', d.answer, d.sql, d.data, d.metadata);
+    loadSessions(); loadMemories();
+  } catch (e) {
+    ty.remove();
+    if (e.name === 'AbortError') addBubble('assistant', 'Generation stopped by user.');
+    else addBubble('assistant', `Error: ${e.message}`);
+  } finally {
+    abortCtrl = null; isLoading = false;
+    document.getElementById('sendBtn').classList.remove('hidden');
+    document.getElementById('stopBtn').classList.add('hidden');
+    document.getElementById('stopBtn').classList.remove('flex');
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('qInput').focus();
+  }
+}
+
+function stopGen() { if (abortCtrl) { abortCtrl.abort(); abortCtrl = null; } }
+
+function addBubble(role, text, sql, data, meta) {
+  const a = document.getElementById('chatArea'), d = document.createElement('div');
+  d.className = `max-w-[80%] animate-fade-in ${role === 'user' ? 'self-end' : 'self-start max-w-[85%]'}`;
+  let h = `<div class="px-4 py-3 rounded-2xl text-sm leading-relaxed ${role === 'user' ? 'bg-indigo-600 text-white rounded-br-md shadow-sm' : 'bg-white border border-gray-200 rounded-bl-md shadow-sm text-gray-800'}">${fmt(text)}`;
+  if (sql) h += `<div class="bg-gray-900 rounded-lg p-3 mt-2 font-mono text-xs overflow-x-auto relative text-blue-300"><button class="absolute top-1.5 right-1.5 bg-gray-700 border border-gray-600 rounded px-2 py-0.5 text-[10px] text-gray-300 hover:bg-gray-600 hover:text-white" onclick="navigator.clipboard.writeText(this.nextElementSibling.textContent)">Copy</button><code>${esc(sql)}</code></div>`;
+  if (data?.length > 0) h += buildTable(data);
+  h += '</div>';
+  if (meta) {
+    h += '<div class="flex flex-wrap gap-1.5 mt-1.5">';
+    if (meta.execution_time_ms) h += `<span class="inline-flex items-center gap-1 bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-[10px] border border-gray-200">⏱ ${meta.execution_time_ms}ms</span>`;
+    if (meta.tables_accessed?.length) h += `<span class="inline-flex items-center gap-1 bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-[10px] border border-gray-200">${meta.tables_accessed.join(', ')}</span>`;
+    if (meta.intent) h += `<span class="inline-flex items-center gap-1 bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-[10px] border border-gray-200">${meta.intent}</span>`;
+    if (meta.memories_used) h += `<span class="inline-flex items-center gap-1 bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-[10px] border border-gray-200">${meta.memories_used} memories</span>`;
+    if (meta.data_freshness) { const fc = { fresh: 'text-emerald-600 bg-emerald-50', slightly_stale: 'text-amber-600 bg-amber-50', stale: 'text-red-600 bg-red-50', unknown: 'text-gray-500 bg-gray-100' }; h += `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border border-gray-200 ${fc[meta.data_freshness.status] || fc.unknown}">${meta.data_freshness.message || 'Data freshness unknown'}</span>`; }
+    h += '</div>';
+  }
+  const now = new Date();
+  h += `<div class="text-[10px] text-gray-400 mt-1 ${role === 'user' ? 'text-right' : ''}">${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}</div>`;
+  d.innerHTML = h; a.appendChild(d); scrollChat();
+}
+function addTyping() {
+  const a = document.getElementById('chatArea'), d = document.createElement('div');
+  d.className = 'self-start animate-fade-in';
+  d.innerHTML = '<div class="bg-white border border-gray-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm"><div class="flex gap-1"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>';
+  a.appendChild(d); scrollChat(); return d;
+}
+function scrollChat() { const a = document.getElementById('chatArea'); a.scrollTop = a.scrollHeight; }
+function buildTable(data) {
+  if (!data.length) return '';
+  const k = Object.keys(data[0]), rows = data.slice(0, 50);
+  let h = '<div class="mt-2 rounded-lg overflow-hidden border border-gray-200 text-xs max-h-72 overflow-y-auto bg-white"><table class="w-full"><thead class="bg-gray-50"><tr>';
+  k.forEach(c => h += `<th class="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-gray-500 font-semibold sticky top-0 bg-gray-50">${esc(c)}</th>`);
+  h += '</tr></thead><tbody class="divide-y divide-gray-100">';
+  rows.forEach(r => { h += '<tr class="hover:bg-indigo-50">'; k.forEach(c => h += `<td class="px-3 py-1.5">${esc(String(r[c] ?? ''))}</td>`); h += '</tr>'; });
+  h += '</tbody></table>';
+  if (data.length > 50) h += `<div class="px-3 py-1.5 text-[10px] text-gray-400 border-t border-gray-100">Showing 50 of ${data.length} rows</div>`;
+  return h + '</div>';
+}
+function fmt(t) {
+  if (!t) return '';
+  return esc(t)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs text-indigo-600">$1</code>')
+    .replace(/\n/g, '<br>');
+}
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+/* ══════════════════════════════════════════
+   DATA FRESHNESS
+   ══════════════════════════════════════════ */
+let _freshnessData = null;
+let _freshnessInterval = null;
+
+async function checkFreshness() {
+  try {
+    const r = await fetch(`${ORCH}/api/data-freshness`, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) throw new Error('Bad response');
+    _freshnessData = await r.json();
+    updateFreshnessUI(_freshnessData);
+  } catch {
+    _freshnessData = null;
+    updateFreshnessUI({ status: 'unknown', message: 'Unable to check data freshness' });
+  }
+}
+
+function updateFreshnessUI(data) {
+  // Chat header badge
+  const badge = document.getElementById('chatFreshness');
+  const label = document.getElementById('chatFreshnessLabel');
+  const dot = document.getElementById('chatFreshDot');
+  if (badge && label && dot) {
+    const statusColors = { fresh: 'bg-emerald-50 text-emerald-600', slightly_stale: 'bg-amber-50 text-amber-600', stale: 'bg-red-50 text-red-600', unknown: 'bg-gray-100 text-gray-500' };
+    const dotColors = { fresh: 'bg-emerald-500', slightly_stale: 'bg-amber-500', stale: 'bg-red-500', unknown: 'bg-gray-400' };
+    badge.className = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold cursor-default ${statusColors[data.status] || statusColors.unknown}`;
+    dot.className = `w-1.5 h-1.5 rounded-full ${dotColors[data.status] || dotColors.unknown}`;
+    label.textContent = data.minutes_ago != null
+      ? (data.minutes_ago < 1 ? 'Synced just now' : data.minutes_ago < 60 ? `Synced ${data.minutes_ago}m ago` : `Synced ${Math.floor(data.minutes_ago / 60)}h ago`)
+      : 'Unknown';
+    badge.title = data.message || 'Data freshness unknown';
+  }
+
+  // Home card
+  const homeFresh = document.getElementById('homeFreshStatus');
+  if (homeFresh) {
+    const dotC = { fresh: 'bg-emerald-500', slightly_stale: 'bg-amber-500', stale: 'bg-red-500', unknown: 'bg-gray-400' };
+    const labels = { fresh: 'Fresh', slightly_stale: 'Slightly Stale', stale: 'Stale', unknown: 'Unknown' };
+    homeFresh.innerHTML = `<span class="inline-block w-2 h-2 rounded-full ${dotC[data.status] || dotC.unknown} mr-2"></span>${labels[data.status] || labels.unknown}`;
+  }
+
+  // Dashboard card
+  const dashVal = document.getElementById('dFreshVal');
+  const dashSub = document.getElementById('dFreshSub');
+  if (dashVal && dashSub) {
+    const colors = { fresh: 'text-emerald-600', slightly_stale: 'text-amber-600', stale: 'text-red-600', unknown: 'text-gray-400' };
+    const labels = { fresh: 'Fresh', slightly_stale: 'Slightly Stale', stale: 'Stale', unknown: 'Unknown' };
+    dashVal.innerHTML = `<span class="${colors[data.status] || colors.unknown}"><span class="inline-block w-2 h-2 rounded-full ${colors[data.status]?.replace('text-', 'bg-') || 'bg-gray-400'} mr-2"></span>${labels[data.status] || labels.unknown}</span>`;
+    dashSub.textContent = data.message || 'Staging DB sync status';
+  }
+
+  // Dashboard detail panel
+  const details = document.getElementById('freshnessDetails');
+  if (details && data.table_details) {
+    const rows = Object.entries(data.table_details).map(([table, info]) => {
+      const mins = info.minutes_ago;
+      let ageText = mins == null ? '—' : mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ago`;
+      let dotColor = mins == null ? 'bg-yellow-400' : mins < 45 ? 'bg-emerald-500' : mins < 120 ? 'bg-amber-500' : 'bg-red-500';
+      return `<div class="flex items-center justify-between py-1.5 text-xs"><span class="flex items-center gap-2 font-semibold text-gray-700"><span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>${table}</span><span class="text-gray-400">${ageText}</span></div>`;
+    }).join('');
+    details.innerHTML = `<div class="mb-3 text-xs text-gray-500">Sync interval: every <strong class="text-gray-700">${data.sync_interval_minutes || 30}</strong> minutes</div>${rows}`;
+  }
+}
+
+function startFreshnessPolling() {
+  checkFreshness();
+  if (_freshnessInterval) clearInterval(_freshnessInterval);
+  _freshnessInterval = setInterval(checkFreshness, 60000);
+}
+
+/* ══════════════════════════════════════════
+   DASHBOARD
+   ══════════════════════════════════════════ */
+async function loadDashboard() {
+  try {
+    const r = await fetch(`${ORCH}/api/health`);
+    const d = await r.json();
+    const ok = d.status === 'healthy';
+    document.getElementById('dOrch').innerHTML = `<span class="inline-block w-2 h-2 rounded-full ${ok ? 'bg-emerald-500' : 'bg-yellow-400'} mr-2"></span>${ok ? 'Healthy' : 'Degraded'}`;
+    document.getElementById('sdOrch').className = `w-2 h-2 rounded-full ${ok ? 'bg-emerald-500' : 'bg-yellow-400'}`;
+    document.getElementById('sdDb').className = `w-2 h-2 rounded-full ${d.components?.staging_db === 'connected' ? 'bg-emerald-500' : 'bg-red-500'}`;
+  } catch {
+    document.getElementById('dOrch').innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>Offline';
+    document.getElementById('sdOrch').className = 'w-2 h-2 rounded-full bg-red-500';
+  }
+
+  checkFreshness();
+
+  try {
+    const r = await fetch(`${ORCH}/api/admin/services`);
+    const d = await r.json();
+    const setS = (elId, sdId, healthy) => {
+      const el = document.getElementById(elId);
+      const sd = document.getElementById(sdId);
+      if (el) el.innerHTML = `<span class="inline-block w-2 h-2 rounded-full ${healthy ? 'bg-emerald-500' : 'bg-red-500'} mr-2"></span>${healthy ? 'Online' : 'Offline'}`;
+      if (sd) sd.className = `w-2 h-2 rounded-full ${healthy ? 'bg-emerald-500' : 'bg-red-500'}`;
+    };
+    setS('dLitellm', 'sdLitellm', d.litellm?.healthy);
+    setS('dOllama', 'sdOllama', d.ollama?.healthy);
+    setS('dMainapp', 'sdMainapp', d.main_app?.healthy);
+  } catch {}
+}
+
+async function testLLM() {
+  const prompt = document.getElementById('testPrompt').value.trim();
+  if (!prompt) return;
+  const res = document.getElementById('testResult');
+  res.classList.remove('hidden');
+  res.innerHTML = '<span class="text-gray-400">Thinking…</span>';
+  try {
+    const r = await fetch(`${ORCH}/api/admin/llm/test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
+    const d = await r.json();
+    if (d.error) res.innerHTML = `<span class="text-red-500">Error: ${esc(d.error)}</span>`;
+    else res.innerHTML = `<strong>Response:</strong> ${esc(d.response)}<br><span class="text-xs text-gray-400">Model: ${d.model} · Tokens: ${d.usage?.total_tokens || '?'}</span>`;
+  } catch (e) { res.innerHTML = `<span class="text-red-500">${esc(e.message)}</span>`; }
+}
+
+/* ══════════════════════════════════════════
+   OLLAMA
+   ══════════════════════════════════════════ */
+async function loadOllama() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/ollama-health`);
+    const d = await r.json();
+    document.getElementById('ollamaStatus').innerHTML = `<span class="inline-block w-2 h-2 rounded-full ${d.healthy ? 'bg-emerald-500' : 'bg-red-500'} mr-2"></span>${d.healthy ? 'Online' : 'Offline'}`;
+    if (d.model_count !== undefined) document.getElementById('ollamaCount').textContent = d.model_count;
+  } catch { document.getElementById('ollamaStatus').innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>Offline'; }
+
+  try {
+    const r = await fetch(`${ORCH}/api/admin/ollama/models`);
+    const d = await r.json();
+    const models = d.models || [];
+    document.getElementById('ollamaCount').textContent = models.length;
+    if (!models.length) { document.getElementById('ollamaModelList').innerHTML = '<p class="text-sm text-gray-400">No models installed.</p>'; return; }
+    document.getElementById('ollamaModelList').innerHTML = models.map(m => `<div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-4 mb-2"><div><div class="font-semibold text-sm text-gray-900">${esc(m.name)}</div><div class="text-xs text-gray-500">${m.size ? (m.size / 1e9).toFixed(1) + ' GB' : ''} ${m.details?.parameter_size || ''}</div></div><button class="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600" onclick="deleteOllamaModel('${esc(m.name)}')">Delete</button></div>`).join('');
+  } catch {}
+
+  try {
+    const r = await fetch(`${ORCH}/api/admin/ollama/running`);
+    const d = await r.json();
+    const models = d.models || [];
+    document.getElementById('ollamaRunning').textContent = models.length;
+    if (!models.length) { document.getElementById('ollamaRunList').innerHTML = '<p class="text-sm text-gray-400">No models currently running.</p>'; return; }
+    document.getElementById('ollamaRunList').innerHTML = models.map(m => `<div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-4 mb-2"><div><div class="font-semibold text-sm text-gray-900">${esc(m.name)}</div><div class="text-xs text-gray-500">VRAM: ${m.size_vram ? (m.size_vram / 1e9).toFixed(1) + ' GB' : '?'}</div></div><span class="text-xs font-semibold text-emerald-600">● Running</span></div>`).join('');
+  } catch {}
+}
+async function pullModel() {
+  const name = document.getElementById('pmName').value.trim(); if (!name) return;
+  const btn = document.getElementById('pullBtn'); btn.disabled = true; btn.textContent = 'Pulling…';
+  try {
+    const r = await fetch(`${ORCH}/api/admin/ollama/pull`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+    const d = await r.json();
+    if (d.error) toast('Pull failed: ' + d.error, 'error'); else { toast('Model pulled successfully', 'success'); loadOllama(); }
+  } catch (e) { toast(e.message, 'error'); } finally { btn.disabled = false; btn.textContent = 'Pull Model'; closeModal('modalPullModel'); }
+}
+async function deleteOllamaModel(name) {
+  if (!confirm(`Delete model "${name}"?`)) return;
+  try { await fetch(`${ORCH}/api/admin/ollama/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) }); toast('Model deleted', 'success'); loadOllama(); } catch (e) { toast(e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════
+   LITELLM
+   ══════════════════════════════════════════ */
+async function loadLitellm() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/litellm-health`);
+    const d = await r.json();
+    document.getElementById('litellmStatus').innerHTML = `<span class="inline-block w-2 h-2 rounded-full ${d.healthy ? 'bg-emerald-500' : 'bg-red-500'} mr-2"></span>${d.healthy ? 'Online' : 'Offline'}`;
+  } catch { document.getElementById('litellmStatus').innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>Offline'; }
+
+  try {
+    const r = await fetch(`${ORCH}/api/admin/litellm/models`);
+    const d = await r.json();
+    const models = d.data || [];
+    document.getElementById('litellmModels').textContent = models.length;
+    if (!models.length) { document.getElementById('litellmModelList').innerHTML = '<p class="text-sm text-gray-400">No models found.</p>'; return; }
+    document.getElementById('litellmModelList').innerHTML = models.map(m => `<div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-4 mb-2"><div><div class="font-semibold text-sm text-gray-900">${esc(m.id)}</div><div class="text-xs text-gray-500">${m.owned_by || ''}</div></div></div>`).join('');
+  } catch {}
+
+  try {
+    const r = await fetch(`${ORCH}/api/admin/config`);
+    const d = await r.json();
+    document.getElementById('litellmEndpoint').textContent = d.litellm_url || '—';
+  } catch {}
+}
+
+/* ══════════════════════════════════════════
+   USERS
+   ══════════════════════════════════════════ */
+async function loadUsers() {
+  try { const r = await fetch(`${ORCH}/api/admin/users`); allUsersData = Array.isArray(r) ? [] : (await r.json()); if (!Array.isArray(allUsersData)) allUsersData = []; renderUsersTable(allUsersData); } catch { allUsersData = []; }
+}
+function renderUsersTable(list) {
+  const tb = document.getElementById('usersBody');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="7" class="text-center text-gray-400 py-8 text-sm">No users found</td></tr>'; return; }
+  const roleBg = { admin: 'bg-red-50 text-red-600', hr_manager: 'bg-emerald-50 text-emerald-600', hr_staff: 'bg-emerald-50 text-emerald-600', sales_manager: 'bg-blue-50 text-blue-600', sales_staff: 'bg-blue-50 text-blue-600', finance: 'bg-amber-50 text-amber-600', project_manager: 'bg-purple-50 text-purple-600', employee: 'bg-gray-100 text-gray-500' };
+  tb.innerHTML = list.map(u => `<tr class="hover:bg-indigo-50">
+    <td class="px-4 py-3 text-xs text-gray-400">${u.user_id}</td>
+    <td class="px-4 py-3 text-sm font-semibold">${u.first_name} ${u.last_name}</td>
+    <td class="px-4 py-3 text-sm text-gray-500">${u.email}</td>
+    <td class="px-4 py-3 text-sm">${u.department}</td>
+    <td class="px-4 py-3"><span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${roleBg[u.role] || roleBg.employee}">${(u.role || '').replace(/_/g, ' ')}</span></td>
+    <td class="px-4 py-3">${u.is_active ? '<span class="text-emerald-600 text-xs font-semibold">● Active</span>' : '<span class="text-red-500 text-xs font-semibold">○ Inactive</span>'}</td>
+    <td class="px-4 py-3 space-x-1"><button class="px-2 py-1 text-xs text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50" onclick="toggleUser(${u.user_id})">${u.is_active ? 'Disable' : 'Enable'}</button> <button class="px-2 py-1 text-xs text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50" onclick="resetPw(${u.user_id})">Reset PW</button> <button class="px-2 py-1 text-xs text-white bg-red-500 rounded-md hover:bg-red-600" onclick="deleteUser(${u.user_id})">Delete</button></td>
+  </tr>`).join('');
+}
+function filterUsers() { const q = document.getElementById('userSearch').value.toLowerCase(); const f = allUsersData.filter(u => `${u.first_name} ${u.last_name} ${u.email} ${u.department}`.toLowerCase().includes(q)); renderUsersTable(f); }
+async function createUser() {
+  const body = { email: document.getElementById('cuEmail').value, first_name: document.getElementById('cuFirst').value, last_name: document.getElementById('cuLast').value, department: document.getElementById('cuDept').value, access_level: document.getElementById('cuRole').value };
+  try {
+    const r = await fetch(`${ORCH}/api/admin/users`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (r.status === 201) { toast('User created', 'success'); closeModal('modalCreateUser'); loadUsers(); } else { const d = await r.json(); toast(d.detail || d.error || 'Failed', 'error'); }
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function toggleUser(id) { try { await fetch(`${ORCH}/api/admin/users/${id}/toggle`, { method: 'POST' }); toast('User toggled', 'success'); loadUsers(); } catch (e) { toast(e.message, 'error'); } }
+async function resetPw(id) { const pw = prompt('New password:'); if (!pw) return; try { await fetch(`${ORCH}/api/admin/users/${id}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ new_password: pw }) }); toast('Password reset', 'success'); } catch (e) { toast(e.message, 'error'); } }
+async function deleteUser(id) { if (!confirm('Delete this user?')) return; try { await fetch(`${ORCH}/api/admin/users/${id}`, { method: 'DELETE' }); toast('User deleted', 'success'); loadUsers(); } catch (e) { toast(e.message, 'error'); } }
+
+/* ══════════════════════════════════════════
+   API KEYS
+   ══════════════════════════════════════════ */
+async function loadKeys() {
+  const tb = document.getElementById('keysBody');
+  const empty = document.getElementById('keysEmpty');
+  try {
+    const r = await fetch(`${ORCH}/api/admin/litellm/keys/list`);
+    const d = await r.json();
+    const keys = d.keys || d || [];
+    if (!Array.isArray(keys) || !keys.length) { tb.innerHTML = ''; empty.classList.remove('hidden'); empty.textContent = 'No API keys found. Generate one to get started.'; return; }
+    empty.classList.add('hidden');
+    tb.innerHTML = keys.map(k => `<tr class="hover:bg-indigo-50">
+      <td class="px-4 py-3 font-mono text-xs text-gray-400">${(k.token || k.key || '').substring(0, 20)}…</td>
+      <td class="px-4 py-3 text-sm">${k.key_alias || k.key_name || '—'}</td>
+      <td class="px-4 py-3 text-sm">$${(k.spend || 0).toFixed(4)}</td>
+      <td class="px-4 py-3 text-sm">${k.max_budget != null ? '$' + k.max_budget : '∞'}</td>
+      <td class="px-4 py-3 text-xs text-gray-400">${k.created_at ? new Date(k.created_at).toLocaleDateString() : ''}</td>
+      <td class="px-4 py-3"><button class="px-2 py-1 text-xs text-white bg-red-500 rounded-md hover:bg-red-600" onclick="revokeKey('${k.token || k.key}')">Revoke</button></td>
+    </tr>`).join('');
+  } catch { empty.classList.remove('hidden'); empty.textContent = 'Could not load keys.'; }
+}
+async function createApiKey() {
+  const name = document.getElementById('ckName').value.trim();
+  const budget = document.getElementById('ckBudget').value;
+  const body = { key_alias: name || undefined };
+  if (budget) body.max_budget = parseFloat(budget);
+  try {
+    const r = await fetch(`${ORCH}/api/admin/litellm/keys/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (d.key) { toast('Key created: ' + d.key.substring(0, 20) + '…', 'success'); closeModal('modalCreateKey'); loadKeys(); } else toast(d.error || 'Failed', 'error');
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function revokeKey(key) {
+  if (!confirm('Revoke this key?')) return;
+  try { await fetch(`${ORCH}/api/admin/litellm/keys/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keys: [key] }) }); toast('Key revoked', 'success'); loadKeys(); } catch (e) { toast(e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════
+   SETTINGS
+   ══════════════════════════════════════════ */
+async function loadSettings() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/config`);
+    const d = await r.json();
+    document.getElementById('settingsConfig').innerHTML = Object.entries(d).map(([k, v]) => `<div class="flex items-center justify-between py-2.5 text-sm"><span class="font-semibold text-gray-700">${k}</span><span class="text-gray-400 font-mono text-xs">${v}</span></div>`).join('');
+  } catch { document.getElementById('settingsConfig').innerHTML = '<p class="text-sm text-gray-400">Could not load configuration.</p>'; }
+}
+
+/* ══════════════════════════════════════════
+   AI WRITING ASSISTANT
+   ══════════════════════════════════════════ */
+let _owaSuggestion = '';
+let _owaAbortCtrl = null;
+
+async function owaAssist() {
+  const btn = document.getElementById('owaBtn');
+  const input = document.getElementById('owaInput');
+  const text = input.value.trim();
+  if (!text) { toast('Please enter some text first', 'error'); return; }
+
+  btn.disabled = true;
+  btn.classList.add('wa-btn-loading');
+  document.getElementById('owaStat').textContent = 'Generating…';
+  document.getElementById('owaResult').classList.add('hidden');
+  document.getElementById('owaStopBtn').classList.remove('hidden');
+  _owaAbortCtrl = new AbortController();
+
+  try {
+    const body = {
+      field_label: document.getElementById('owaFieldLabel').value || 'Notes',
+      current_text: text,
+      app_section: document.getElementById('owaSection').value || 'Admin Panel',
+      tone: document.getElementById('owaTone').value,
+      context: []
+    };
+    const r = await fetch(`${ORCH}/api/assist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(body),
+      signal: _owaAbortCtrl.signal
+    });
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({ detail: 'Request failed' }));
+      throw new Error(e.detail || r.statusText);
+    }
+    const d = await r.json();
+    _owaSuggestion = d.suggestion || '';
+    document.getElementById('owaBody').textContent = _owaSuggestion;
+
+    const badge = document.getElementById('owaBadge');
+    const t = (d.type || 'rewrite').toUpperCase();
+    badge.textContent = t;
+    badge.className = `px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${t === 'REWRITE' ? 'bg-indigo-100 text-indigo-600' : 'bg-purple-100 text-purple-600'}`;
+
+    const meta = d.metadata || {};
+    let metaHtml = '';
+    if (meta.execution_time_ms) metaHtml += '<span>⏱ ' + meta.execution_time_ms + 'ms</span>';
+    if (d.tone) metaHtml += '<span>🎨 ' + d.tone + '</span>';
+    if (meta.input_length) metaHtml += '<span>📝 ' + meta.input_length + ' → ' + meta.output_length + ' chars</span>';
+    if (meta.pii_redacted) metaHtml += '<span>🛡️ PII redacted</span>';
+    document.getElementById('owaMeta').innerHTML = metaHtml;
+
+    document.getElementById('owaResult').classList.remove('hidden');
+    document.getElementById('owaStat').textContent = '';
+    toast('AI suggestion ready!', 'success');
+  } catch (e) {
+    document.getElementById('owaStat').textContent = '';
+    if (e.name === 'AbortError') toast('Generation stopped', 'info');
+    else toast('AI Assist error: ' + e.message, 'error');
+  } finally {
+    _owaAbortCtrl = null;
+    btn.disabled = false;
+    btn.classList.remove('wa-btn-loading');
+    document.getElementById('owaStopBtn').classList.add('hidden');
+  }
+}
+
+function owaStopGen() { if (_owaAbortCtrl) { _owaAbortCtrl.abort(); _owaAbortCtrl = null; } }
+
+function owaReplace() {
+  if (!_owaSuggestion) return;
+  document.getElementById('owaInput').value = _owaSuggestion;
+  toast('Text replaced', 'success');
+}
+
+function owaAppend() {
+  if (!_owaSuggestion) return;
+  const el = document.getElementById('owaInput');
+  el.value = el.value.trim() + '\n\n' + _owaSuggestion;
+  toast('Text appended', 'success');
+}
+
+function owaCopy() {
+  if (!_owaSuggestion) return;
+  navigator.clipboard.writeText(_owaSuggestion).then(
+    () => toast('Copied to clipboard', 'success'),
+    () => toast('Copy failed', 'error')
+  );
+}
+
+/* ══════════════════════════════════════════
+   HELPER: Auth headers for admin dashboard
+   ══════════════════════════════════════════ */
+function authHdr() { return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }; }
+function authGet() { return { headers: { 'Authorization': `Bearer ${token}` } }; }
+
+/* ══════════════════════════════════════════
+   MODULE 1: CONNECTIONS
+   ══════════════════════════════════════════ */
+async function loadConnections() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/connections`, authGet());
+    const d = await r.json();
+    // Render LLM card
+    const llm = d.llm || {};
+    document.getElementById('connLlm').innerHTML = Object.keys(llm).length
+      ? Object.entries(llm).map(([k,v]) => `<div class="flex justify-between py-1.5 text-sm"><span class="text-gray-500">${esc(k)}</span><span class="font-mono text-xs text-gray-700">${esc(String(v))}</span></div>`).join('')
+      : '<p class="text-sm text-gray-400">Not configured</p>';
+    // Render DB card
+    const db = d.database || {};
+    document.getElementById('connDb').innerHTML = Object.keys(db).length
+      ? Object.entries(db).map(([k,v]) => `<div class="flex justify-between py-1.5 text-sm"><span class="text-gray-500">${esc(k)}</span><span class="font-mono text-xs text-gray-700">${esc(String(v))}</span></div>`).join('')
+      : '<p class="text-sm text-gray-400">Not configured</p>';
+    // Render Auth card
+    const auth = d.auth || {};
+    document.getElementById('connAuth').innerHTML = Object.keys(auth).length
+      ? Object.entries(auth).map(([k,v]) => `<div class="flex justify-between py-1.5 text-sm"><span class="text-gray-500">${esc(k)}</span><span class="font-mono text-xs text-gray-700">${esc(String(v))}</span></div>`).join('')
+      : '<p class="text-sm text-gray-400">Not configured</p>';
+    // Connection list
+    const all = d.connections || d.all || [];
+    if (Array.isArray(all) && all.length) {
+      document.getElementById('connList').innerHTML = all.map(c => `<div class="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+        <div><div class="font-semibold text-sm text-gray-900">${esc(c.name || c.type || '—')}</div><div class="text-xs text-gray-400">${esc(c.type || '')} · ${esc(c.url || c.host || '')}</div></div>
+        <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${c.active ? 'bg-emerald-500' : 'bg-gray-300'}"></span><span class="text-xs text-gray-500">${c.active ? 'Active' : 'Inactive'}</span></div>
+      </div>`).join('');
+    } else {
+      document.getElementById('connList').innerHTML = '<p class="text-sm text-gray-400">No connections configured</p>';
+    }
+  } catch (e) {
+    document.getElementById('connLlm').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`;
+  }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 2: SCHEMA MAP
+   ══════════════════════════════════════════ */
+let _schemaData = [];
+async function loadSchema() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/schema`, authGet());
+    const d = await r.json();
+    _schemaData = d.tables || d || [];
+    renderSchemaList(_schemaData);
+  } catch (e) { document.getElementById('schemaTableList').innerHTML = `<p class="text-sm text-red-400 p-4">${esc(e.message)}</p>`; }
+}
+function renderSchemaList(tables) {
+  const list = Array.isArray(tables) ? tables : Object.entries(tables).map(([name, info]) => ({ name, ...info }));
+  document.getElementById('schemaTableList').innerHTML = list.map(t => {
+    const tName = t.name || t.table_name || '—';
+    const cols = t.columns ? (Array.isArray(t.columns) ? t.columns.length : Object.keys(t.columns).length) : '?';
+    return `<div class="px-4 py-3 cursor-pointer hover:bg-indigo-50 transition-colors text-sm" onclick="loadTableDetail('${esc(tName)}')">
+      <div class="font-semibold text-gray-900">${esc(tName)}</div>
+      <div class="text-xs text-gray-400">${cols} columns${t.description ? ' · ' + esc(t.description.substring(0, 40)) : ''}</div>
+    </div>`;
+  }).join('');
+}
+function filterSchemaList() {
+  const q = document.getElementById('schemaSearch').value.toLowerCase();
+  const list = Array.isArray(_schemaData) ? _schemaData : Object.entries(_schemaData).map(([name, info]) => ({ name, ...info }));
+  const filtered = list.filter(t => (t.name || t.table_name || '').toLowerCase().includes(q));
+  renderSchemaList(filtered);
+}
+async function loadTableDetail(table) {
+  const panel = document.getElementById('schemaDetail');
+  panel.innerHTML = '<p class="text-sm text-gray-400">Loading…</p>';
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/schema/${encodeURIComponent(table)}`, authGet());
+    const d = await r.json();
+    const cols = d.columns || [];
+    const colList = Array.isArray(cols) ? cols : Object.entries(cols).map(([name, info]) => ({ name, ...(typeof info === 'object' ? info : { type: info }) }));
+    let h = `<div class="flex items-center justify-between mb-4">
+      <div><h3 class="text-lg font-bold text-gray-900">${esc(table)}</h3><p class="text-xs text-gray-400">${colList.length} columns</p></div>
+      <button onclick="aiDescribeTable('${esc(table)}')" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">AI Describe</button>
+    </div>`;
+    h += `<div class="mb-4"><label class="text-xs font-semibold text-gray-500 mb-1 block">Table Description</label>
+      <input type="text" id="schemaTableDesc" value="${esc(d.description || '')}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+      <button onclick="saveTableDesc('${esc(table)}')" class="mt-2 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">Save Description</button>
+    </div>`;
+    h += '<div class="divide-y divide-gray-100">';
+    colList.forEach(c => {
+      const cName = c.name || c.column_name || '—';
+      const cType = c.type || c.data_type || '';
+      h += `<div class="py-3 flex items-start justify-between gap-3">
+        <div class="flex-1"><div class="font-semibold text-sm text-gray-900">${esc(cName)}<span class="ml-2 text-xs text-gray-400 font-normal">${esc(cType)}</span></div>
+        <input type="text" value="${esc(c.description || '')}" data-col="${esc(cName)}" class="schema-col-desc mt-1 w-full border border-gray-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="Column description…">
+        </div>
+        <button onclick="saveColumnDesc('${esc(table)}','${esc(cName)}')" class="mt-1 px-2 py-1 text-xs text-indigo-600 border border-indigo-200 rounded hover:bg-indigo-50">Save</button>
+      </div>`;
+    });
+    h += '</div>';
+    panel.innerHTML = h;
+  } catch (e) { panel.innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`; }
+}
+async function saveTableDesc(table) {
+  const desc = document.getElementById('schemaTableDesc').value;
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/schema/${encodeURIComponent(table)}`, { method: 'PUT', headers: authHdr(), body: JSON.stringify({ description: desc }) });
+    toast('Table description saved', 'success'); loadSchema();
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function saveColumnDesc(table, col) {
+  const input = document.querySelector(`input.schema-col-desc[data-col="${col}"]`);
+  if (!input) return;
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/schema/${encodeURIComponent(table)}/columns/${encodeURIComponent(col)}`, { method: 'POST', headers: authHdr(), body: JSON.stringify({ description: input.value }) });
+    toast('Column description saved', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function aiDescribeTable(table) {
+  toast('AI generating description…', 'info');
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/schema/${encodeURIComponent(table)}/ai-generate`, { method: 'POST', headers: authHdr() });
+    if (r.ok) { toast('AI description generated', 'success'); loadTableDetail(table); loadSchema(); }
+    else { const e = await r.json(); toast(e.detail || 'Failed', 'error'); }
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function aiDescribeAll() {
+  if (!confirm('AI will generate descriptions for all tables. Continue?')) return;
+  toast('AI describing all tables…', 'info');
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/schema/ai-generate-all`, { method: 'POST', headers: authHdr() });
+    if (r.ok) { toast('All tables described', 'success'); loadSchema(); }
+    else { const e = await r.json(); toast(e.detail || 'Failed', 'error'); }
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 3: SYSTEM PROMPT & SKILLS
+   ══════════════════════════════════════════ */
+async function loadSystemPrompt() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/system-prompt`, authGet());
+    const d = await r.json();
+    document.getElementById('sysPromptEditor').value = d.prompt || d.system_prompt || '';
+  } catch (e) { document.getElementById('sysPromptEditor').value = 'Error loading: ' + e.message; }
+  loadSkills();
+}
+async function saveSystemPrompt() {
+  const prompt = document.getElementById('sysPromptEditor').value;
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/system-prompt`, { method: 'PUT', headers: authHdr(), body: JSON.stringify({ prompt }) });
+    toast('System prompt saved', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function loadSkills() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/system-prompt`, authGet());
+    const data = await r.json();
+    const list = data.skills || [];
+    if (!list.length) { document.getElementById('skillsList').innerHTML = '<p class="text-sm text-gray-400">No skills installed</p>'; return; }
+    document.getElementById('skillsList').innerHTML = list.map(s => {
+      const name = typeof s === 'string' ? s : (s.name || s.skill_name || '—');
+      return `<div class="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+        <div class="font-semibold text-sm text-gray-900">${esc(name)}</div>
+        <button onclick="removeSkill('${esc(name)}')" class="px-2 py-1 text-xs text-red-500 border border-red-200 rounded hover:bg-red-50">Remove</button>
+      </div>`;
+    }).join('');
+  } catch { document.getElementById('skillsList').innerHTML = '<p class="text-sm text-gray-400">Could not load skills</p>'; }
+}
+async function installSkill() {
+  const name = document.getElementById('skillName').value.trim();
+  const content = document.getElementById('skillContent').value.trim();
+  if (!name) { toast('Skill name required', 'error'); return; }
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/skills`, { method: 'POST', headers: authHdr(), body: JSON.stringify({ name, content }) });
+    toast('Skill added', 'success'); closeModal('modalAddSkill'); loadSkills();
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function removeSkill(name) {
+  if (!confirm(`Remove skill "${name}"?`)) return;
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/skills/${encodeURIComponent(name)}`, { method: 'DELETE', headers: authHdr() });
+    toast('Skill removed', 'success'); loadSkills();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 4: AI PERMISSIONS (RBAC)
+   ══════════════════════════════════════════ */
+async function loadRbac() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/rbac`, authGet());
+    const d = await r.json();
+    const roles = d.roles || d || {};
+    const container = document.getElementById('rbacContent');
+    if (!Object.keys(roles).length) { container.innerHTML = '<p class="text-sm text-gray-400">No roles configured</p>'; return; }
+    container.innerHTML = Object.entries(roles).map(([role, info]) => {
+      const tables = info.allowed_tables || info.tables || [];
+      const allTables = info.all_tables || [];
+      return `<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-bold text-gray-900 uppercase">${esc(role)}</h3>
+          <span class="text-xs text-gray-400">${tables.length} tables allowed</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          ${(allTables.length ? allTables : tables).map(t => {
+            const allowed = tables.includes(t);
+            return `<button onclick="toggleRbacTable('${esc(role)}','${esc(t)}')" class="px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${allowed ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100'}">${esc(t)}</button>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) { document.getElementById('rbacContent').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`; }
+}
+async function toggleRbacTable(role, table) {
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/rbac/${encodeURIComponent(role)}/toggle-table`, { method: 'POST', headers: authHdr(), body: JSON.stringify({ table }) });
+    toast(`Toggled ${table} for ${role}`, 'success'); loadRbac();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 5: INTENT TUNER
+   ══════════════════════════════════════════ */
+async function loadIntents() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/intents`, authGet());
+    const d = await r.json();
+    const intents = d.intents || d || {};
+    const container = document.getElementById('intentList');
+    if (typeof intents === 'object' && !Array.isArray(intents)) {
+      container.innerHTML = Object.entries(intents).map(([type, patterns]) => {
+        const patList = Array.isArray(patterns) ? patterns : (patterns.patterns || []);
+        return `<div class="mb-6 last:mb-0">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-2">${esc(type)}</h4>
+          <div class="space-y-1">
+            ${patList.map((p, i) => `<div class="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-gray-50 group">
+              <span class="text-sm text-gray-700">${esc(typeof p === 'string' ? p : p.pattern || p.phrase || JSON.stringify(p))}</span>
+              <button onclick="deleteIntent('${esc(type)}',${i})" class="hidden group-hover:block text-xs text-red-400 hover:text-red-600">Delete</button>
+            </div>`).join('')}
+          </div>
+          <div class="flex gap-2 mt-2">
+            <input type="text" id="newIntent_${type}" placeholder="Add pattern…" class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-1 focus:ring-indigo-500 outline-none">
+            <button onclick="addIntent('${esc(type)}')" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">Add</button>
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      container.innerHTML = '<p class="text-sm text-gray-400">No intent patterns found</p>';
+    }
+  } catch (e) { document.getElementById('intentList').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`; }
+}
+async function addIntent(type) {
+  const input = document.getElementById('newIntent_' + type);
+  if (!input || !input.value.trim()) return;
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/intents/${encodeURIComponent(type)}`, { method: 'POST', headers: authHdr(), body: JSON.stringify({ pattern: input.value.trim() }) });
+    toast('Pattern added', 'success'); input.value = ''; loadIntents();
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function deleteIntent(type, index) {
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/intents/${encodeURIComponent(type)}/${index}`, { method: 'DELETE', headers: authHdr() });
+    toast('Pattern deleted', 'success'); loadIntents();
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function testIntent() {
+  const input = document.getElementById('intentTestInput').value.trim();
+  if (!input) return;
+  const res = document.getElementById('intentTestResult');
+  res.classList.remove('hidden');
+  res.innerHTML = '<span class="text-gray-400">Classifying…</span>';
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/intents/test`, { method: 'POST', headers: authHdr(), body: JSON.stringify({ question: input }) });
+    const d = await r.json();
+    res.innerHTML = `<strong>Intent:</strong> <span class="text-indigo-600 font-semibold">${esc(d.intent || d.classification || '—')}</span>` +
+      (d.confidence != null ? ` <span class="text-gray-400">(${(d.confidence * 100).toFixed(0)}%)</span>` : '') +
+      (d.matched_pattern ? `<br><span class="text-xs text-gray-400">Matched: ${esc(d.matched_pattern)}</span>` : '');
+  } catch (e) { res.innerHTML = `<span class="text-red-500">${esc(e.message)}</span>`; }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 6: AI MEMORY (Admin)
+   ══════════════════════════════════════════ */
+async function loadAdminMemories() {
+  const userId = document.getElementById('memAdminFilter')?.value?.trim() || '';
+  try {
+    const url = `${ORCH}/api/admin/dashboard/memories?limit=50${userId ? '&user_id=' + encodeURIComponent(userId) : ''}`;
+    const r = await fetch(url, authGet());
+    const d = await r.json();
+    const mems = d.memories || d || [];
+    const tb = document.getElementById('adminMemBody');
+    if (!mems.length) { tb.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-sm text-gray-400">No memories found</td></tr>'; return; }
+    const catColors = { preference: 'bg-purple-100 text-purple-700', fact: 'bg-emerald-100 text-emerald-700', context: 'bg-blue-100 text-blue-700', instruction: 'bg-amber-100 text-amber-700' };
+    tb.innerHTML = mems.map(m => `<tr class="hover:bg-indigo-50">
+      <td class="px-4 py-3 text-xs text-gray-500">${esc(m.user_id || '—')}</td>
+      <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${catColors[m.category] || 'bg-gray-100 text-gray-600'}">${esc(m.category || '—')}</span></td>
+      <td class="px-4 py-3 text-sm text-gray-700 max-w-md truncate">${esc(m.content || '')}</td>
+      <td class="px-4 py-3 text-xs text-gray-400">${m.importance != null ? (m.importance * 100).toFixed(0) + '%' : '—'}</td>
+      <td class="px-4 py-3"><button onclick="deleteAdminMemory('${esc(m.id || m.memory_id)}')" class="px-2 py-1 text-xs text-red-500 border border-red-200 rounded hover:bg-red-50">Delete</button></td>
+    </tr>`).join('');
+  } catch (e) { document.getElementById('adminMemBody').innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-sm text-red-400">${esc(e.message)}</td></tr>`; }
+}
+async function deleteAdminMemory(id) {
+  if (!confirm('Delete this memory?')) return;
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/memories/${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHdr() });
+    toast('Memory deleted', 'success'); loadAdminMemories();
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function loadEpisodicMemories() {
+  const userId = document.getElementById('memAdminFilter')?.value?.trim() || '';
+  const panel = document.getElementById('episodicPanel');
+  panel.classList.remove('hidden');
+  const container = document.getElementById('episodicList');
+  container.innerHTML = '<p class="text-sm text-gray-400">Loading…</p>';
+  try {
+    const url = `${ORCH}/api/admin/dashboard/episodic?limit=50${userId ? '&user_id=' + encodeURIComponent(userId) : ''}`;
+    const r = await fetch(url, authGet());
+    const d = await r.json();
+    const eps = d.episodes || d || [];
+    if (!eps.length) { container.innerHTML = '<p class="text-sm text-gray-400">No episodic memories found</p>'; return; }
+    container.innerHTML = eps.map(e => `<div class="flex items-start justify-between py-3 border-b border-gray-50 last:border-0">
+      <div class="flex-1"><div class="text-sm text-gray-800">${esc(e.content || e.summary || '')}</div>
+      <div class="text-xs text-gray-400 mt-1">User: ${esc(e.user_id || '—')} · ${e.created_at ? new Date(e.created_at).toLocaleString() : ''}</div></div>
+      <button onclick="deleteEpisodic('${esc(e.id || e.episode_id)}')" class="ml-3 px-2 py-1 text-xs text-red-400 hover:text-red-600">Delete</button>
+    </div>`).join('');
+  } catch (e) { container.innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`; }
+}
+async function deleteEpisodic(id) {
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/episodic/${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHdr() });
+    toast('Episode deleted', 'success'); loadEpisodicMemories();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 7: SECURITY (PII & Blocked Topics)
+   ══════════════════════════════════════════ */
+async function loadSecurityPage() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/pii`, authGet());
+    const d = await r.json();
+    const piiContainer = document.getElementById('piiConfig');
+    let h = '';
+    // Enabled toggle
+    h += `<div class="flex items-center justify-between py-2"><span class="text-sm text-gray-700 font-semibold">PII Detection Enabled</span>
+      <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="pii_enabled" ${d.enabled ? 'checked' : ''} class="sr-only peer">
+      <div class="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div></label></div>`;
+    // Action
+    h += `<div class="flex items-center justify-between py-2"><span class="text-sm text-gray-700">Action</span>
+      <select id="pii_action" class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
+        <option value="redact" ${d.action === 'redact' ? 'selected' : ''}>Redact</option>
+        <option value="block" ${d.action === 'block' ? 'selected' : ''}>Block</option>
+        <option value="warn" ${d.action === 'warn' ? 'selected' : ''}>Warn</option>
+      </select></div>`;
+    // Type toggles
+    if (d.types && typeof d.types === 'object') {
+      h += '<div class="mt-3 pt-3 border-t border-gray-100"><p class="text-xs font-bold text-gray-500 uppercase mb-2">Detection Types</p>';
+      Object.entries(d.types).forEach(([type, enabled]) => {
+        const label = type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        h += `<div class="flex items-center justify-between py-1.5"><span class="text-sm text-gray-700">${esc(label)}</span>
+          <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="pii_type_${type}" ${enabled ? 'checked' : ''} class="sr-only peer">
+          <div class="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div></label></div>`;
+      });
+      h += '</div>';
+    }
+    piiContainer.innerHTML = h;
+    // Blocked topics — combine custom + builtin
+    const allTopics = [...(d.custom_blocked_topics || []), ...(d.builtin_blocked_topics || [])];
+    renderBlockedTopics(allTopics);
+  } catch (e) { document.getElementById('piiConfig').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`; }
+}
+function markPiiDirty() { /* visual indicator could be added */ }
+function renderBlockedTopics(topics) {
+  const container = document.getElementById('blockedTopicsList');
+  if (!topics.length) { container.innerHTML = '<p class="text-sm text-gray-400">No blocked topics</p>'; return; }
+  container.innerHTML = topics.map((t, i) => {
+    const name = typeof t === 'string' ? t : (t.name || '—');
+    const pattern = t.pattern || '';
+    const source = t.source || 'custom';
+    return `<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+      <div><span class="text-sm font-semibold text-gray-700">${esc(name)}</span>${pattern ? `<span class="ml-2 text-xs text-gray-400 font-mono">${esc(pattern)}</span>` : ''}${source === 'built-in' ? '<span class="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-500">built-in</span>' : ''}</div>
+      ${source !== 'built-in' ? `<button onclick="deleteBlockedTopic(${i})" class="text-xs text-red-400 hover:text-red-600">Remove</button>` : ''}
+    </div>`;
+  }).join('');
+}
+async function savePiiConfig() {
+  const config = { enabled: document.getElementById('pii_enabled')?.checked ?? true };
+  const actionEl = document.getElementById('pii_action');
+  if (actionEl) config.action = actionEl.value;
+  const types = {};
+  document.querySelectorAll('[id^="pii_type_"]').forEach(el => {
+    types[el.id.replace('pii_type_', '')] = el.checked;
+  });
+  if (Object.keys(types).length) config.types = types;
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/pii`, { method: 'PUT', headers: authHdr(), body: JSON.stringify(config) });
+    toast('PII config saved', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function addBlockedTopic() {
+  const nameInput = document.getElementById('blockedTopicName');
+  const patternInput = document.getElementById('blockedTopicInput');
+  const name = nameInput.value.trim();
+  const pattern = patternInput.value.trim();
+  if (!name || !pattern) { toast('Name and regex pattern are required', 'error'); return; }
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/pii/blocked-topics`, { method: 'POST', headers: authHdr(), body: JSON.stringify({ name, pattern }) });
+    if (r.ok) { toast('Topic blocked', 'success'); nameInput.value = ''; patternInput.value = ''; loadSecurityPage(); }
+    else { const e = await r.json(); toast(e.detail || 'Failed', 'error'); }
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function deleteBlockedTopic(index) {
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/pii/blocked-topics/${index}`, { method: 'DELETE', headers: authHdr() });
+    toast('Topic removed', 'success'); loadSecurityPage();
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function testPiiDetection() {
+  const text = document.getElementById('piiTestInput').value.trim();
+  if (!text) return;
+  const res = document.getElementById('piiTestResult');
+  res.classList.remove('hidden');
+  res.innerHTML = '<span class="text-gray-400">Testing…</span>';
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/pii/test`, { method: 'POST', headers: authHdr(), body: JSON.stringify({ text }) });
+    const d = await r.json();
+    const found = d.pii_found || d.detections || [];
+    if (found.length) {
+      res.innerHTML = `<span class="text-red-600 font-semibold">PII Detected:</span> ` + found.map(p => `<span class="inline-block px-2 py-0.5 bg-red-50 text-red-600 rounded text-xs mr-1">${esc(typeof p === 'string' ? p : p.type || JSON.stringify(p))}</span>`).join('');
+    } else {
+      res.innerHTML = `<span class="text-emerald-600 font-semibold">✓ No PII detected</span>` + (d.redacted ? `<br><span class="text-xs text-gray-400">Redacted: ${esc(d.redacted)}</span>` : '');
+    }
+  } catch (e) { res.innerHTML = `<span class="text-red-500">${esc(e.message)}</span>`; }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 8: DATA SYNC
+   ══════════════════════════════════════════ */
+async function loadSyncStatus() {
+  // Freshness
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/freshness`, authGet());
+    const d = await r.json();
+    const statusColors = { fresh: 'text-emerald-600', slightly_stale: 'text-amber-600', stale: 'text-red-600', unknown: 'text-gray-400' };
+    const dotColors = { fresh: 'bg-emerald-500', slightly_stale: 'bg-amber-500', stale: 'bg-red-500', unknown: 'bg-gray-400' };
+    let h = `<div class="flex items-center gap-2 mb-3"><span class="w-3 h-3 rounded-full ${dotColors[d.status] || dotColors.unknown}"></span><span class="text-lg font-bold ${statusColors[d.status] || statusColors.unknown}">${(d.status || 'unknown').replace(/_/g, ' ').toUpperCase()}</span></div>`;
+    h += `<p class="text-sm text-gray-500 mb-3">${esc(d.message || '')}</p>`;
+    if (d.table_details) {
+      h += '<div class="space-y-1">';
+      Object.entries(d.table_details).forEach(([t, info]) => {
+        const mins = info.minutes_ago;
+        const age = mins == null ? '—' : mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ago`;
+        const dc = mins == null ? 'bg-yellow-400' : mins < 45 ? 'bg-emerald-500' : mins < 120 ? 'bg-amber-500' : 'bg-red-500';
+        h += `<div class="flex items-center justify-between text-sm py-1"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full ${dc}"></span>${esc(t)}</span><span class="text-gray-400 text-xs">${age}</span></div>`;
+      });
+      h += '</div>';
+    }
+    document.getElementById('syncFreshness').innerHTML = h;
+  } catch (e) { document.getElementById('syncFreshness').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`; }
+  // Schedule
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/sync/schedule`, authGet());
+    const d = await r.json();
+    let h = `<div class="space-y-3">
+      <div class="flex items-center justify-between"><span class="text-sm text-gray-700">Interval (minutes)</span>
+        <input type="number" id="syncInterval" value="${d.interval_minutes || d.interval || 30}" min="1" class="w-24 border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-right focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+      <div class="flex items-center justify-between"><span class="text-sm text-gray-700">Enabled</span>
+        <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="syncEnabled" ${d.enabled !== false ? 'checked' : ''} class="sr-only peer">
+        <div class="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div></label>
+      </div>
+      <button onclick="saveSyncSchedule()" class="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Save Schedule</button>
+    </div>`;
+    document.getElementById('syncSchedule').innerHTML = h;
+  } catch (e) { document.getElementById('syncSchedule').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`; }
+  // Sync Log
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/sync/log`, authGet());
+    const d = await r.json();
+    const logs = d.logs || d || [];
+    if (Array.isArray(logs) && logs.length) {
+      document.getElementById('syncLog').innerHTML = logs.map(l => `<div class="py-2 border-b border-gray-50 last:border-0 text-sm">
+        <span class="text-xs text-gray-400">${l.timestamp ? new Date(l.timestamp).toLocaleString() : ''}</span>
+        <span class="ml-2 ${l.status === 'success' ? 'text-emerald-600' : 'text-red-500'}">${esc(l.status || '')}</span>
+        <span class="ml-2 text-gray-600">${esc(l.message || l.details || '')}</span>
+      </div>`).join('');
+    } else {
+      document.getElementById('syncLog').innerHTML = '<p class="text-sm text-gray-400">No sync log entries</p>';
+    }
+  } catch (e) { document.getElementById('syncLog').innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`; }
+}
+async function saveSyncSchedule() {
+  const interval = parseInt(document.getElementById('syncInterval').value) || 30;
+  const enabled = document.getElementById('syncEnabled').checked;
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/sync/schedule`, { method: 'PUT', headers: authHdr(), body: JSON.stringify({ interval_minutes: interval, enabled }) });
+    toast('Schedule saved', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function forceSync() {
+  const btn = document.getElementById('forceSyncBtn');
+  btn.disabled = true; btn.textContent = 'Syncing…';
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/sync/force`, { method: 'POST', headers: authHdr() });
+    if (r.ok) { toast('Force sync completed', 'success'); loadSyncStatus(); }
+    else { const e = await r.json(); toast(e.detail || 'Sync failed', 'error'); }
+  } catch (e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Force Sync'; }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 9: CHAT SESSIONS (Admin)
+   ══════════════════════════════════════════ */
+async function loadAllSessions() {
+  const userId = document.getElementById('sessAdminFilter')?.value?.trim() || '';
+  try {
+    const url = `${ORCH}/api/admin/dashboard/sessions?limit=100${userId ? '&user_id=' + encodeURIComponent(userId) : ''}`;
+    const r = await fetch(url, authGet());
+    const d = await r.json();
+    const sess = d.sessions || d || [];
+    const tb = document.getElementById('adminSessBody');
+    if (!sess.length) { tb.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-sm text-gray-400">No sessions found</td></tr>'; return; }
+    tb.innerHTML = sess.map(s => `<tr class="hover:bg-indigo-50">
+      <td class="px-4 py-3 font-mono text-xs text-gray-400">${esc((s.id || s.session_id || '').substring(0, 12))}…</td>
+      <td class="px-4 py-3 text-sm text-gray-600">${esc(s.user_id || '—')}</td>
+      <td class="px-4 py-3 text-sm font-semibold text-gray-900">${esc(s.title || 'Untitled')}</td>
+      <td class="px-4 py-3 text-sm text-gray-500">${s.message_count || 0}</td>
+      <td class="px-4 py-3 text-xs text-gray-400">${s.updated_at ? fmtAge(s.updated_at) : '—'}</td>
+      <td class="px-4 py-3 space-x-1">
+        <button onclick="viewAdminSession('${esc(s.id || s.session_id)}')" class="px-2 py-1 text-xs text-indigo-600 border border-indigo-200 rounded hover:bg-indigo-50">View</button>
+        <button onclick="deleteAdminSession('${esc(s.id || s.session_id)}')" class="px-2 py-1 text-xs text-red-500 border border-red-200 rounded hover:bg-red-50">Delete</button>
+      </td>
+    </tr>`).join('');
+  } catch (e) { document.getElementById('adminSessBody').innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-sm text-red-400">${esc(e.message)}</td></tr>`; }
+}
+async function viewAdminSession(id) {
+  const panel = document.getElementById('sessDetailPanel');
+  panel.classList.remove('hidden');
+  const content = document.getElementById('sessDetailContent');
+  content.innerHTML = '<p class="text-sm text-gray-400">Loading…</p>';
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/sessions/${encodeURIComponent(id)}`, authGet());
+    const d = await r.json();
+    const msgs = d.messages || [];
+    if (!msgs.length) { content.innerHTML = '<p class="text-sm text-gray-400">No messages</p>'; return; }
+    content.innerHTML = msgs.map(m => `<div class="py-2 border-b border-gray-50 last:border-0">
+      <div class="flex items-center gap-2 mb-1"><span class="text-xs font-bold uppercase ${m.role === 'user' ? 'text-indigo-600' : 'text-emerald-600'}">${esc(m.role)}</span><span class="text-[10px] text-gray-400">${m.timestamp ? new Date(m.timestamp).toLocaleString() : ''}</span></div>
+      <div class="text-sm text-gray-700">${esc(m.content || '')}</div>
+    </div>`).join('');
+  } catch (e) { content.innerHTML = `<p class="text-sm text-red-400">${esc(e.message)}</p>`; }
+}
+async function deleteAdminSession(id) {
+  if (!confirm('Delete this session?')) return;
+  try {
+    await fetch(`${ORCH}/api/admin/dashboard/sessions/${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHdr() });
+    toast('Session deleted', 'success'); loadAllSessions();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 10: RAG DATABASE
+   ══════════════════════════════════════════ */
+async function loadRagStatus() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/rag`, authGet());
+    const d = await r.json();
+    document.getElementById('ragSize').textContent = d.db_size || d.size || '—';
+    document.getElementById('ragMemCount').textContent = d.memories_count ?? d.memories ?? '—';
+    document.getElementById('ragEpiCount').textContent = d.episodes_count ?? d.episodes ?? '—';
+    document.getElementById('ragMsgCount').textContent = d.messages_count ?? d.messages ?? '—';
+  } catch (e) {
+    ['ragSize', 'ragMemCount', 'ragEpiCount', 'ragMsgCount'].forEach(id => document.getElementById(id).textContent = 'Error');
+  }
+}
+async function vacuumRag() {
+  if (!confirm('Vacuum the RAG database? This may take a moment.')) return;
+  toast('Vacuuming…', 'info');
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/rag/vacuum`, { method: 'POST', headers: authHdr() });
+    if (r.ok) { toast('Vacuum complete', 'success'); loadRagStatus(); }
+    else { const e = await r.json(); toast(e.detail || 'Failed', 'error'); }
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function clearRagTable(table) {
+  if (!confirm(`Clear all data from "${table}"? This cannot be undone.`)) return;
+  try {
+    const r = await fetch(`${ORCH}/api/admin/dashboard/rag/clear/${encodeURIComponent(table)}`, { method: 'POST', headers: authHdr() });
+    if (r.ok) { toast(`Table "${table}" cleared`, 'success'); loadRagStatus(); }
+    else { const e = await r.json(); toast(e.detail || 'Failed', 'error'); }
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 11: ADMIN USERS
+   ══════════════════════════════════════════ */
+async function loadAdminUsers() {
+  try {
+    const r = await fetch(`${ORCH}/api/admin/auth/users`, authGet());
+    const d = await r.json();
+    const users = d.users || d || [];
+    const tb = document.getElementById('adminUsersBody');
+    if (!users.length) { tb.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-sm text-gray-400">No admin users found</td></tr>'; return; }
+    tb.innerHTML = users.map(u => `<tr class="hover:bg-indigo-50">
+      <td class="px-4 py-3 text-xs text-gray-400">${u.id || '—'}</td>
+      <td class="px-4 py-3 text-sm font-semibold text-gray-900">${esc(u.username || '')}</td>
+      <td class="px-4 py-3 text-sm text-gray-600">${esc(u.display_name || '—')}</td>
+      <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${u.role === 'admin' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}">${esc(u.role || '—')}</span></td>
+      <td class="px-4 py-3">${u.is_active !== false ? '<span class="text-emerald-600 text-xs font-semibold">● Active</span>' : '<span class="text-red-500 text-xs font-semibold">○ Inactive</span>'}</td>
+      <td class="px-4 py-3"><button onclick="deleteAdminUser(${u.id})" class="px-2 py-1 text-xs text-red-500 border border-red-200 rounded hover:bg-red-50">Delete</button></td>
+    </tr>`).join('');
+  } catch (e) { document.getElementById('adminUsersBody').innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-sm text-red-400">${esc(e.message)}</td></tr>`; }
+}
+async function createAdminUser() {
+  const body = {
+    username: document.getElementById('cauUsername').value.trim(),
+    password: document.getElementById('cauPassword').value,
+    display_name: document.getElementById('cauDisplayName').value.trim(),
+    role: document.getElementById('cauRole').value
+  };
+  if (!body.username || !body.password) { toast('Username and password required', 'error'); return; }
+  try {
+    const r = await fetch(`${ORCH}/api/admin/auth/users`, { method: 'POST', headers: authHdr(), body: JSON.stringify(body) });
+    if (r.ok || r.status === 201) { toast('Admin user created', 'success'); closeModal('modalCreateAdminUser'); loadAdminUsers(); }
+    else { const e = await r.json(); toast(e.detail || 'Failed', 'error'); }
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function deleteAdminUser(id) {
+  if (!confirm('Delete this admin user?')) return;
+  try {
+    await fetch(`${ORCH}/api/admin/auth/users/${id}`, { method: 'DELETE', headers: authHdr() });
+    toast('Admin user deleted', 'success'); loadAdminUsers();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════
+   MODULE 12: ACTIVITY LOG
+   ══════════════════════════════════════════ */
+async function loadLogs() {
+  const level = document.getElementById('logLevelFilter')?.value || '';
+  try {
+    const url = `${ORCH}/api/admin/dashboard/logs?lines=200${level ? '&level=' + encodeURIComponent(level) : ''}`;
+    const r = await fetch(url, authGet());
+    const d = await r.json();
+    const logs = d.logs || d || [];
+    const container = document.getElementById('logContent');
+    if (typeof logs === 'string') {
+      container.innerHTML = `<pre class="whitespace-pre-wrap">${esc(logs)}</pre>`;
+    } else if (Array.isArray(logs) && logs.length) {
+      const levelColors = { INFO: 'text-blue-400', WARNING: 'text-yellow-400', ERROR: 'text-red-400', DEBUG: 'text-gray-500', CRITICAL: 'text-red-600' };
+      container.innerHTML = logs.map(l => {
+        const line = typeof l === 'string' ? l : `${l.timestamp || ''} [${l.level || ''}] ${l.message || ''}`;
+        const lv = typeof l === 'string' ? (l.match(/\[(INFO|WARNING|ERROR|DEBUG|CRITICAL)\]/)?.[1] || '') : (l.level || '');
+        return `<div class="py-0.5 ${levelColors[lv] || 'text-gray-300'}">${esc(line)}</div>`;
+      }).join('');
+    } else {
+      container.innerHTML = '<p class="text-gray-500">No log entries found</p>';
+    }
+  } catch (e) { document.getElementById('logContent').innerHTML = `<p class="text-red-400">${esc(e.message)}</p>`; }
+}
+
+init();
+</script>
+</body>
+</html>

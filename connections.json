@@ -1,0 +1,45 @@
+{
+  "llm_providers": [
+    {
+      "label": "Primary LLM",
+      "provider": "groq",
+      "base_url": "https://api.groq.com/openai",
+      "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+      "fast_model": "openai/gpt-oss-20b",
+      "temperature": 0.1,
+      "max_tokens": 8192,
+      "context_window": 131072,
+      "purpose": "General SQL + Summarisation",
+      "api_key": "YOUR_GROQ_API_KEY_HERE",
+      "id": "llm-default"
+    }
+  ],
+  "databases": [
+    {
+      "label": "Main ERP Database",
+      "engine": "sqlite",
+      "url_override": "sqlite+aiosqlite:///C:/AI/ERP-BGS/db.sqlite3",
+      "host": "localhost",
+      "port": 5433,
+      "name": "staging",
+      "user": "ai_reader",
+      "purpose": "Primary ERP staging data",
+      "password": "YOUR_DB_PASSWORD_HERE",
+      "id": "db-default"
+    }
+  ],
+  "applications": [
+    {
+      "id": "app-default",
+      "label": "ERP-BGS Django App",
+      "base_url": "http://localhost:7000",
+      "auth_mode": "jwt",
+      "jwt_secret": "change-me-shared-jwt-secret",
+      "jwt_algorithm": "HS256",
+      "jwt_issuer": "erp-bgs",
+      "jwt_audience": "atl-ai",
+      "token_cache_ttl": 300,
+      "is_active": true
+    }
+  ]
+}

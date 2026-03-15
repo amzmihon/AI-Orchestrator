@@ -1,0 +1,112 @@
+{
+  "roles": {
+    "admin": {
+      "description": "Full access to all tables (CEO, MD, CTO)",
+      "allowed_tables": ["*"],
+      "denied_columns": {}
+    },
+    "hr_manager": {
+      "description": "HR department — employee data, leave, attendance, plus projects, skills, and performance reviews",
+      "allowed_tables": [
+        "employees",
+        "leave_requests",
+        "attendance",
+        "departments",
+        "projects",
+        "project_assignments",
+        "employee_skills",
+        "performance_reviews"
+      ],
+      "denied_columns": {
+        "employees": ["salary", "bank_account", "ssn", "national_id"]
+      }
+    },
+    "hr_staff": {
+      "description": "HR staff — read employee basics, leave requests, and skills",
+      "allowed_tables": [
+        "employees",
+        "leave_requests",
+        "attendance",
+        "employee_skills"
+      ],
+      "denied_columns": {
+        "employees": ["salary", "bank_account", "ssn", "national_id", "emergency_contact"]
+      }
+    },
+    "sales_manager": {
+      "description": "Sales department manager — sales, revenue, projects, customers",
+      "allowed_tables": [
+        "sales",
+        "monthly_revenue",
+        "projects",
+        "project_assignments",
+        "customers",
+        "departments"
+      ],
+      "denied_columns": {}
+    },
+    "sales_staff": {
+      "description": "Sales team member — own sales data and basic project info",
+      "allowed_tables": [
+        "sales",
+        "projects",
+        "customers"
+      ],
+      "denied_columns": {
+        "sales": ["commission_rate"]
+      }
+    },
+    "project_manager": {
+      "description": "Project manager — projects, assignments, team info, skills",
+      "allowed_tables": [
+        "projects",
+        "project_assignments",
+        "employees",
+        "employee_skills",
+        "attendance"
+      ],
+      "denied_columns": {
+        "employees": ["salary", "bank_account", "ssn", "national_id", "emergency_contact"]
+      }
+    },
+    "finance": {
+      "description": "Finance department — revenue, expenses, sales, payroll, and employee salary data",
+      "allowed_tables": [
+        "sales",
+        "monthly_revenue",
+        "expenses",
+        "employees",
+        "projects",
+        "departments",
+        "payroll"
+      ],
+      "denied_columns": {
+        "employees": ["ssn", "national_id", "emergency_contact"]
+      }
+    },
+    "employee": {
+      "description": "Regular employee — minimal read access",
+      "allowed_tables": [
+        "leave_requests",
+        "attendance",
+        "projects"
+      ],
+      "denied_columns": {}
+    }
+  },
+  "all_tables": [
+    "employees",
+    "sales",
+    "attendance",
+    "projects",
+    "project_assignments",
+    "leave_requests",
+    "monthly_revenue",
+    "departments",
+    "customers",
+    "employee_skills",
+    "expenses",
+    "payroll",
+    "performance_reviews"
+  ]
+}

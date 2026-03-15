@@ -1,0 +1,10 @@
+[
+  {
+    "type": "force_sync",
+    "status": "completed",
+    "synced_tables": 130,
+    "errors_count": 0,
+    "elapsed_ms": 401.7,
+    "timestamp": "2026-03-12T04:30:22.176792+00:00"
+  }
+]

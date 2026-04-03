@@ -6,6 +6,7 @@ Converts natural-language questions into SQL, executes on a read-only
 staging database, and returns professional summaries.
 """
 
+import os
 import pathlib
 from contextlib import asynccontextmanager
 
@@ -84,6 +85,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=int(os.environ.get("PORT", 8101)),
         reload=settings.debug,
     )

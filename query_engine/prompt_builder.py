@@ -12,7 +12,23 @@ private corporate intelligence mission.
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from config import settings
+
+_SYSTEM_PROMPT_PATH = Path(os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "system_prompt.md")
+))
+
+
+def _load_admin_system_prompt() -> str:
+    """Load optional admin-edited system prompt from system_prompt.md."""
+    try:
+        content = _SYSTEM_PROMPT_PATH.read_text(encoding="utf-8").strip()
+        return f"\n\n## Admin Instructions\n{content}" if content else ""
+    except FileNotFoundError:
+        return ""
 
 
 # ═══════════════════════════════════════════════════════════
@@ -194,8 +210,9 @@ def build_sql_prompt(schema_text: str, question: str) -> list[dict[str, str]]:
     """
     Build the messages array for the LLM to generate SQL.
     """
+    system_content = SQL_SYSTEM_TEMPLATE.format(schema=schema_text) + _load_admin_system_prompt()
     return [
-        {"role": "system", "content": SQL_SYSTEM_TEMPLATE.format(schema=schema_text)},
+        {"role": "system", "content": system_content},
         {"role": "user", "content": USER_TEMPLATE.format(question=question)},
     ]
 
@@ -272,7 +289,7 @@ def build_multi_step_sql_prompt(
         schema=schema_text,
         sub_tasks=sub_task_text,
         episodic_context=episodic_text,
-    )
+    ) + _load_admin_system_prompt()
 
     return [
         {"role": "system", "content": system_content},
@@ -305,7 +322,7 @@ def build_text_processing_prompt(question: str) -> list[dict[str, str]]:
     Build messages for text-processing tasks (no SQL generation).
     """
     return [
-        {"role": "system", "content": TEXT_PROCESSING_SYSTEM},
+        {"role": "system", "content": TEXT_PROCESSING_SYSTEM + _load_admin_system_prompt()},
         {"role": "user", "content": question},
     ]
 
@@ -386,7 +403,7 @@ def build_multi_step_summary_prompt(
         data_text = "\n".join(rows_text)
 
     return [
-        {"role": "system", "content": MULTI_STEP_SUMMARY_SYSTEM},
+        {"role": "system", "content": MULTI_STEP_SUMMARY_SYSTEM + _load_admin_system_prompt()},
         {
             "role": "user",
             "content": MULTI_STEP_SUMMARY_USER.format(

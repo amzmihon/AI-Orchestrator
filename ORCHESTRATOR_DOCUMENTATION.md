@@ -1,10 +1,11 @@
 # ATL-AI Orchestrator — Complete Technical Documentation
 
-> **Version:** 2.1.0  
+> **Version:** 2.2.0  
 > **Framework:** Python 3.12 + FastAPI  
 > **Purpose:** Private AI-Powered Corporate Intelligence Engine  
 > **Container Port:** 8000 (mapped to host 7001)  
 > **Dev Admin UI Port:** 8100  
+> **Last Updated:** March 19, 2026  
 
 ---
 
@@ -1615,4 +1616,4 @@ curl http://localhost:7001/api/health
 
 ---
 
-*Generated for ATL-AI Orchestrator v2.1.0*
+*Generated for ATL-AI Orchestrator v2.2.0 — Last updated March 19, 2026*

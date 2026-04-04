@@ -9,6 +9,8 @@ staging database, and returns professional summaries.
 import os
 import pathlib
 from contextlib import asynccontextmanager
+import asyncio
+from llm_health_task import llm_health_background_task
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,13 +19,15 @@ from fastapi.responses import FileResponse
 
 from config import settings
 from db import engine, dispose_engine
-from routers import chat, health, sessions, admin, assist, admin_dashboard, admin_auth
+from routers import chat, health, sessions, admin, assist, admin_dashboard, admin_auth, llm_management
 from chat_history import init_db
 from admin_db import init_admin_db
+from llm_status_store import init_status_db
 from auth.dependencies import get_admin_user
 from middleware.rate_limiter import RateLimitMiddleware
 
 STATIC_DIR = pathlib.Path(__file__).parent / "static"
+
 
 
 @asynccontextmanager
@@ -32,9 +36,14 @@ async def lifespan(app: FastAPI):
     # Startup — initialize databases
     await init_db()
     await init_admin_db()
-    yield
-    # Shutdown — close DB pool
-    await dispose_engine()
+    await init_status_db()
+    # Start LLM health background task
+    health_task = asyncio.create_task(llm_health_background_task())
+    try:
+        yield
+    finally:
+        health_task.cancel()
+        await dispose_engine()
 
 
 app = FastAPI(
@@ -67,6 +76,12 @@ app.include_router(
     prefix="/api",
     tags=["admin dashboard"],
     dependencies=[Depends(get_admin_user)],
+)
+app.include_router(
+    llm_management.router, 
+    prefix="/api", 
+    tags=["llm management"],
+    dependencies=[Depends(get_admin_user)]
 )
 
 # ── Static UI (AFTER routers so /api/* is matched first) ─

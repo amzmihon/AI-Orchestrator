@@ -20,7 +20,7 @@ def _load_role_config() -> dict[str, Any]:
     if not path.exists():
         # Fall back to path from settings
         path = Path(settings.role_config_path)
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 

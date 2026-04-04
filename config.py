@@ -3,7 +3,29 @@ Application configuration — loaded from environment variables.
 """
 
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, BaseModel
+
+
+class LLMConfig(BaseModel):
+    name: str = Field(..., description="Unique name for this LLM (e.g. 'bitnet', 'qwen', 'gpt4')")
+    base_url: str = Field(..., description="Base URL for the LLM endpoint")
+    api_key: str = Field(default="", description="API key for this LLM (if needed)")
+    model: str = Field(..., description="Model name as required by the LLM API")
+    role: str = Field(default="standby", description="Role: primary, secondary, standby, etc.")
+    capabilities: list[str] = Field(default_factory=list, description="Tags: ['fast', 'complex', 'no_pii', 'internal', ...]")
+    temperature: float = 0.1
+    max_tokens: int = 8192
+    request_timeout: int = 120
+    cost_per_1k_input_tokens: float = 0.0
+    cost_per_1k_output_tokens: float = 0.0
+    privacy_level: str = "standard"
+    max_concurrent_requests: int = 10
+    priority: int = 0
+    tags: list[str] = Field(default_factory=list)
+    cooldown_seconds: int = 60
+    max_fail_count: int = 3
+    provider_type: str = "openai"
+    enabled: bool = True
 
 
 class Settings(BaseSettings):
@@ -81,22 +103,29 @@ class Settings(BaseSettings):
     def is_sqlite(self) -> bool:
         return "sqlite" in self.staging_db_url
 
-    # ── LLM Server (LiteLLM Proxy) ──────────────────────
+
+    # ── Multi-LLM Support ───────────────────────────────
+    llms: list[LLMConfig] = Field(
+        default_factory=list,
+        description="List of LLM configurations (endpoint, model, role, capabilities, etc.)",
+    )
+
+    # Backward compatibility (single LLM fields)
     llm_base_url: str = Field(
         default="http://localhost:7002",
-        description="Base URL of the LiteLLM proxy",
+        description="Base URL of the LiteLLM proxy (legacy)",
     )
     llm_api_key: str = Field(
         default="sk-change-me",
-        description="Default API key for the LiteLLM proxy",
+        description="Default API key for the LiteLLM proxy (legacy)",
     )
     llm_model: str = Field(
         default="qwen-sql",
-        description="Model name as registered in LiteLLM config (qwen3.5:9b)",
+        description="Model name as registered in LiteLLM config (legacy)",
     )
     llm_fast_model: str = Field(
         default="qwen-sql-fast",
-        description="Lightweight model for simple queries (qwen3.5:4b)",
+        description="Lightweight model for simple queries (legacy)",
     )
     llm_temperature: float = 0.1
     llm_max_tokens: int = 8192
@@ -194,3 +223,47 @@ class Settings(BaseSettings):
 
 # Singleton
 settings = Settings()
+
+# ── Config Migration & Legacy Bridge (Phase 1.5) ─────────────
+import pathlib
+import json
+
+def check_and_migrate_legacy_config():
+    if not settings.llms:
+        connections_path = pathlib.Path(__file__).parent / "connections.json"
+        if connections_path.exists():
+            try:
+                with open(connections_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    for llm_data in data.get("llm_providers", []):
+                        if llm_data.get("is_active"):
+                            settings.llms.append(LLMConfig(
+                                name=llm_data.get("id", "legacy-llm"),
+                                base_url=llm_data.get("base_url", settings.llm_base_url),
+                                api_key=llm_data.get("api_key", settings.llm_api_key),
+                                model=llm_data.get("model", settings.llm_model),
+                                role="primary",
+                                temperature=llm_data.get("temperature", settings.llm_temperature),
+                                max_tokens=llm_data.get("max_tokens", settings.llm_max_tokens),
+                                provider_type=llm_data.get("provider", "openai"),
+                                enabled=True
+                            ))
+                            break
+            except Exception:
+                pass
+                
+        # Fallback to pure env vars if still empty
+        if not settings.llms:
+            settings.llms.append(LLMConfig(
+                name="legacy-primary",
+                base_url=settings.llm_base_url,
+                api_key=settings.llm_api_key,
+                model=settings.llm_model,
+                role="primary",
+                temperature=settings.llm_temperature,
+                max_tokens=settings.llm_max_tokens,
+                provider_type="openai",
+                enabled=True
+            ))
+
+check_and_migrate_legacy_config()

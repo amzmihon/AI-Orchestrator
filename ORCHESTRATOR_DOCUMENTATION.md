@@ -1,3 +1,29 @@
+## Connecting BitNet b1.58 2B4T as LLM
+
+You can use a local BitNet b1.58 2B4T model (or any OpenAI-compatible LLM) as the backend for the Orchestrator. Follow these steps:
+
+### Step-by-Step Setup
+
+1. **Open the configuration file:**
+  - Edit `AI-Orchestrator/config.py`.
+
+2. **Set the LLM base URL:**
+  - Change the `llm_base_url` to your BitNet endpoint:
+    ```python
+    llm_base_url: str = "http://127.0.0.1:9999"
+    ```
+
+3. **Set the model name:**
+  - Update `llm_model` to match the model name BitNet expects (e.g., "bitnet-b1.58-2b4t" or as required by your BitNet API).
+
+4. **Restart the orchestrator:**
+  - Save changes and restart your orchestrator service.
+
+5. **Test the connection:**
+  - Use the orchestrator’s chat or API to verify BitNet is responding.
+
+**Note:**
+- Model selection is currently handled via config, not the UI. If you need a UI option to select BitNet, see the project issues or request this feature.
 # ATL-AI Orchestrator — Complete Technical Documentation
 
 > **Version:** 2.2.0  
